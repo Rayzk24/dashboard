@@ -1,8 +1,33 @@
 const MS_PER_DAY = 86_400_000;
 const DEFAULT_SUMMER_START = '2026-06-14';
 const DEFAULT_SUMMER_END = '2026-08-20';
+const DEFAULT_DAY_ROLLOVER_HOUR = 5;
 
 export function getTodayKey(date = new Date()) {
+  const shiftedDate = new Date(date);
+  shiftedDate.setHours(shiftedDate.getHours() - getDayRolloverHour());
+
+  return formatDateKey(shiftedDate);
+}
+
+export function getDayRolloverHour() {
+  const configuredHour = Number.parseInt(
+    import.meta.env.VITE_DAY_ROLLOVER_HOUR ?? '',
+    10,
+  );
+
+  if (
+    Number.isInteger(configuredHour) &&
+    configuredHour >= 0 &&
+    configuredHour <= 23
+  ) {
+    return configuredHour;
+  }
+
+  return DEFAULT_DAY_ROLLOVER_HOUR;
+}
+
+function formatDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -52,7 +77,7 @@ export function getDatesToEnsure(todayKey = getTodayKey()) {
 export function addDaysToKey(dateKey: string, amount: number) {
   const date = parseDateKey(dateKey);
   date.setDate(date.getDate() + amount);
-  return getTodayKey(date);
+  return formatDateKey(date);
 }
 
 export function formatLongDate(dateKey: string) {

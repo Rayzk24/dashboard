@@ -30,6 +30,7 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_SUMMER_START=2026-06-14
 VITE_SUMMER_END=2026-08-20
+VITE_DAY_ROLLOVER_HOUR=5
 ```
 
 Démarrer :
@@ -91,6 +92,7 @@ Après cette première création, l'app n'affiche plus d'inscription et le trigg
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_SUMMER_START`
    - `VITE_SUMMER_END`
+   - `VITE_DAY_ROLLOVER_HOUR`
 7. Lancer le déploiement.
 8. Ajouter l'URL Pages finale dans `Authentication > URL Configuration` côté Supabase.
 
@@ -104,6 +106,9 @@ Cloudflare documente `npm run build` et `dist` comme configuration standard pour
 | `VITE_SUPABASE_ANON_KEY` | `ey...` | Clé publique anon/publishable Supabase |
 | `VITE_SUMMER_START` | `2026-06-14` | Début de la période Summer '26 |
 | `VITE_SUMMER_END` | `2026-08-20` | Fin de la période Summer '26 |
+| `VITE_DAY_ROLLOVER_HOUR` | `5` | Heure locale à laquelle une nouvelle journée dashboard commence |
+
+Avec `VITE_DAY_ROLLOVER_HOUR=5`, une habitude cochée à 2h du matin compte encore pour la veille. La nouvelle fiche du jour apparaît à partir de 5h.
 
 ## Sources utiles
 
