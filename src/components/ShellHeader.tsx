@@ -4,12 +4,14 @@ import { motion } from 'framer-motion';
 type ShellHeaderProps = {
   dateLabel: string;
   onSignOut: () => void;
+  rolloverLabel: string;
   summerLabel: string;
 };
 
 export default function ShellHeader({
   dateLabel,
   onSignOut,
+  rolloverLabel,
   summerLabel,
 }: ShellHeaderProps) {
   return (
@@ -41,8 +43,13 @@ export default function ShellHeader({
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <div className="rounded-full border border-black/5 bg-paper px-4 py-2 text-sm font-bold text-ink">
-            {summerLabel}
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="rounded-full border border-black/5 bg-paper px-4 py-2 text-sm font-bold text-ink">
+              {summerLabel}
+            </div>
+            <div className="rounded-full border border-black/5 bg-white px-3 py-2 text-xs font-bold text-gray-500">
+              {rolloverLabel}
+            </div>
           </div>
           <button
             aria-label="Se déconnecter"

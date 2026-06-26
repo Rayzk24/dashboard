@@ -6,6 +6,8 @@ import { supabase } from '../lib/supabase';
 import {
   formatLongDate,
   getDatesToEnsure,
+  getDayRolloverHour,
+  getNextDayRolloverAt,
   getSummerProgress,
   getTodayKey,
 } from '../lib/summer';
@@ -48,13 +50,24 @@ const defaultGoals = [
 
 export default function Dashboard({ onSignOut, session }: DashboardProps) {
   const userId = session.user.id;
-  const todayKey = getTodayKey();
+  const [todayKey, setTodayKey] = useState(() => getTodayKey());
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [goals, setGoals] = useState<SummerGoal[]>([]);
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const nextRolloverAt = getNextDayRolloverAt();
+    const delay = Math.max(nextRolloverAt.getTime() - Date.now() + 1000, 1000);
+
+    const timeoutId = window.setTimeout(() => {
+      setTodayKey(getTodayKey());
+    }, delay);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [todayKey]);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -84,7 +97,10 @@ export default function Dashboard({ onSignOut, session }: DashboardProps) {
       setEntries(nextEntries);
       setGoals((goalsResult.data ?? []) as SummerGoal[]);
       setSelectedDate((currentDate) =>
-        nextEntries.some((entry) => entry.entry_date === currentDate)
+        nextEntries.some(
+          (entry) =>
+            entry.entry_date === currentDate && entry.entry_date <= todayKey,
+        )
           ? currentDate
           : todayKey,
       );
@@ -103,18 +119,23 @@ export default function Dashboard({ onSignOut, session }: DashboardProps) {
     void loadDashboard();
   }, [loadDashboard]);
 
+  const visibleEntries = useMemo(
+    () => entries.filter((entry) => entry.entry_date <= todayKey),
+    [entries, todayKey],
+  );
+
   const selectedEntry = useMemo(
     () =>
-      entries.find((entry) => entry.entry_date === selectedDate) ??
-      entries.find((entry) => entry.entry_date === todayKey) ??
-      entries[0] ??
+      visibleEntries.find((entry) => entry.entry_date === selectedDate) ??
+      visibleEntries.find((entry) => entry.entry_date === todayKey) ??
+      visibleEntries[0] ??
       null,
-    [entries, selectedDate, todayKey],
+    [selectedDate, todayKey, visibleEntries],
   );
 
   const stats = useMemo(
-    () => getDashboardStats(entries, todayKey),
-    [entries, todayKey],
+    () => getDashboardStats(visibleEntries, todayKey),
+    [todayKey, visibleEntries],
   );
 
   const summer = useMemo(() => getSummerProgress(todayKey), [todayKey]);
@@ -180,6 +201,7 @@ export default function Dashboard({ onSignOut, session }: DashboardProps) {
         <ShellHeader
           dateLabel={formatLongDate(todayKey)}
           onSignOut={onSignOut}
+          rolloverLabel={`Reset ${getDayRolloverHour()}h`}
           summerLabel={summer.label}
         />
 
@@ -238,7 +260,7 @@ export default function Dashboard({ onSignOut, session }: DashboardProps) {
               <div className="grid gap-5 lg:grid-cols-[1fr_0.82fr]">
                 <NotesPanel entry={selectedEntry} onUpdate={updateEntry} />
                 <HistoryPanel
-                  entries={entries}
+                  entries={visibleEntries}
                   onSelect={setSelectedDate}
                   selectedDate={selectedEntry.entry_date}
                 />

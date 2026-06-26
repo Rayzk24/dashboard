@@ -27,6 +27,17 @@ export function getDayRolloverHour() {
   return DEFAULT_DAY_ROLLOVER_HOUR;
 }
 
+export function getNextDayRolloverAt(date = new Date()) {
+  const nextRollover = new Date(date);
+  nextRollover.setHours(getDayRolloverHour(), 0, 0, 0);
+
+  if (date >= nextRollover) {
+    nextRollover.setDate(nextRollover.getDate() + 1);
+  }
+
+  return nextRollover;
+}
+
 function formatDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
