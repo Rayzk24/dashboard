@@ -12,7 +12,7 @@ type DailyHabitsPanelProps = {
 
 const habits = [
   { key: 'code_done', label: '30 min de code' },
-  { key: 'learning_done', label: "30 min d'apprentissage" },
+  { key: 'learning_done', label: 'Apprendre quelque chose' },
   { key: 'outside_done', label: '30 min dehors' },
 ] as const;
 
