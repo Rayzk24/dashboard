@@ -32,3 +32,5 @@
 
 /* Secondary destructive action in the mission editor. */
 .danger-action{color:var(--brick)!important}.mission-delete-trigger{align-self:start;margin-top:2px;padding:7px 0;font-size:13px}.mission-delete-trigger:hover{color:var(--brick)!important;text-decoration:underline}
+
+.period-select{width:132px;min-width:0}
