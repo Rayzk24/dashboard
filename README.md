@@ -1,117 +1,64 @@
-# Rayzk Dashboard
+# Rayzk Dashboard V0.9
 
-Dashboard personnel privé, séparé du portfolio, construit avec Vite, React, TypeScript, Tailwind CSS et Supabase.
+Dashboard personnel privé pour les habitudes, le suivi freelance et les achats. La version V0.9 utilise exclusivement Supabase au runtime et le thème final Bleu minuit raffiné.
 
-## Stack
+## Prérequis
 
-- Vite + React + TypeScript
-- Tailwind CSS avec les tokens visuels du portfolio Rayzk
-- Framer Motion pour les micro-animations
-- Supabase Auth + Postgres + Row Level Security
-- Déploiement statique sur Cloudflare Pages
+- Node.js `22.12.0` ou plus récent dans la branche 22 (voir `.nvmrc`).
+- Un projet Supabase configuré selon [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
-## Lancer en local
+## Installation locale
 
 ```bash
-cd C:\Users\95ray\Desktop\Code\rayzk-dashboard
 npm install
-```
-
-Créer le fichier local d'environnement :
-
-```powershell
 Copy-Item .env.example .env.local
+npm run dev
 ```
 
-Remplir `.env.local` :
+Renseignez uniquement ces deux variables dans `.env.local` :
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-VITE_SUMMER_START=2026-06-14
-VITE_SUMMER_END=2026-08-20
-VITE_DAY_ROLLOVER_HOUR=5
 ```
 
-Démarrer :
+La clé anonyme/publishable est une clé frontend. Elle ne remplace pas Supabase Auth et les politiques RLS. Ne mettez jamais une clé `service_role`, une clé secrète ou un mot de passe de base dans une variable `VITE_*`.
+
+## Commandes
 
 ```bash
-npm run dev
-```
-
-Build de vérification :
-
-```bash
+npm run typecheck
+npm run test
 npm run build
+npm run preview
 ```
 
-## Configurer Supabase
+Le build Vite est créé dans `dist`. `public/_redirects` et `public/_headers` sont copiés dans ce dossier.
 
-1. Créer un projet sur [Supabase](https://supabase.com/).
-2. Ouvrir `Project Settings > API`.
-3. Copier `Project URL` dans `VITE_SUPABASE_URL`.
-4. Copier la clé publique `anon` / `publishable` dans `VITE_SUPABASE_ANON_KEY`.
-5. Ouvrir `SQL Editor`.
-6. Coller et exécuter tout le contenu de `supabase/schema.sql`.
-7. Dans `Authentication > Providers`, vérifier que le provider Email est actif.
-8. Dans `Authentication > URL Configuration`, ajouter les URLs utilisées :
-   - `http://localhost:5173`
-   - l'URL Cloudflare Pages après déploiement
+## Architecture
 
-Le SQL crée :
+- `src/app` : session Supabase, routage et état de données partagé.
+- `src/services/data.ts` : unique repository frontend Supabase.
+- `src/features` : les quatre espaces produit (Accueil, Habitudes, Freelance, Personnel) et Réglages.
+- `supabase/schema.sql` : bootstrap Auth/admin historique.
+- `supabase/migrations` : évolutions additives et versionnées du schéma produit.
 
-- une table `admin_profile` limitée à une seule ligne ;
-- un trigger sur `auth.users` qui refuse toute création d'utilisateur après le premier compte ;
-- les tables `daily_entries` et `summer_goals` ;
-- les policies RLS pour que seul l'admin authentifié lise et modifie ses données ;
-- la fonction publique `has_admin()` utilisée uniquement pour savoir si l'écran de premier lancement doit s'afficher.
+## Fonctionnalités présentes
 
-## Créer le premier compte administrateur
+- Connexion Supabase mono-administrateur, persistance de session et déconnexion.
+- Habitudes : création, modification, archivage, validation, vues semaine/mois et statistiques.
+- Freelance : clients, missions, sessions titrées, tarifs hérités, commissions, règlements, allocations et rapport PDF existant.
+- Personnel : ajout, modification, changement de statut et suppression des achats.
+- Réglages persistants : nom, site, tarif global, changement de jour et export JSON.
 
-1. Lancer le projet avec `npm run dev`.
-2. Ouvrir l'app.
-3. Si aucun admin n'existe, l'écran `Premier lancement` apparaît.
-4. Entrer l'email et le mot de passe du compte admin.
-5. Si la confirmation email Supabase est active, confirmer l'email puis se connecter.
+## Fonctionnalités prévues pour V1.1
 
-Après cette première création, l'app n'affiche plus d'inscription et le trigger SQL bloque les nouvelles créations de comptes.
+- Détail et modification complets d’une session.
+- Suppression définitive des habitudes, missions et sessions.
+- Historique, modification et suppression avancés des règlements.
 
-## Déployer sur Cloudflare Pages
+Ces actions ne sont pas présentées comme disponibles dans l’interface V0.9.
 
-1. Pousser ce dossier dans un repository GitHub.
-2. Ouvrir [Cloudflare Dashboard](https://dash.cloudflare.com/).
-3. Aller dans `Workers & Pages`.
-4. Créer une application Pages et importer le repository.
-5. Configurer :
-   - Framework preset : `React (Vite)` ou `Vite`
-   - Build command : `npm run build`
-   - Build output directory : `dist`
-   - Root directory : laisser vide si le repository contient seulement ce projet, sinon `rayzk-dashboard`
-6. Ajouter les variables d'environnement dans `Settings > Environment variables` :
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-   - `VITE_SUMMER_START`
-   - `VITE_SUMMER_END`
-   - `VITE_DAY_ROLLOVER_HOUR`
-7. Lancer le déploiement.
-8. Ajouter l'URL Pages finale dans `Authentication > URL Configuration` côté Supabase.
+## Déploiement
 
-Cloudflare documente `npm run build` et `dist` comme configuration standard pour React/Vite sur Pages.
-
-## Variables
-
-| Variable | Exemple | Role |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` | URL publique du projet Supabase |
-| `VITE_SUPABASE_ANON_KEY` | `ey...` | Clé publique anon/publishable Supabase |
-| `VITE_SUMMER_START` | `2026-06-14` | Début de la période Summer '26 |
-| `VITE_SUMMER_END` | `2026-08-20` | Fin de la période Summer '26 |
-| `VITE_DAY_ROLLOVER_HOUR` | `5` | Heure locale à laquelle une nouvelle journée dashboard commence |
-
-Avec `VITE_DAY_ROLLOVER_HOUR=5`, une habitude cochée à 2h du matin compte encore pour la veille. La nouvelle fiche du jour apparaît à partir de 5h.
-
-## Sources utiles
-
-- [Cloudflare Pages build configuration](https://developers.cloudflare.com/pages/configuration/build-configuration/)
-- [Supabase password auth](https://supabase.com/docs/guides/auth/passwords)
-- [Supabase Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+Suivez [DEPLOYMENT.md](DEPLOYMENT.md) pour les étapes Supabase et Cloudflare Pages. Aucune donnée de démonstration ni route de laboratoire ne fait partie du produit V0.9.
