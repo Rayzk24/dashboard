@@ -63,6 +63,14 @@ Fichier : `supabase/migrations/20260719_v09_production_stability.sql`
 
 Appliquez toujours ce fichier après les étapes précédentes. Il ajoute uniquement un trigger qui crée les réglages par défaut pour un futur premier administrateur et remplit les réglages manquants des administrateurs existants. Il n’écrase aucune ligne `app_settings` existante.
 
+### Étape 7 — Gestion et historique V1.1
+
+Fichier : `supabase/migrations/20260720_v11_management.sql`
+
+Appliquez ce fichier après V0.9 et avant de déployer/merger V1.1. Il ajoute des RPC sécurisées pour supprimer une habitude, supprimer une mission sans supprimer ses sessions, créer/modifier/supprimer un règlement avec reconstruction déterministe des allocations, et supprimer une session sans supprimer les règlements. Il ajoute aussi une protection de base empêchant de réduire une session sous le montant déjà attribué.
+
+Après exécution, créez des données temporaires pour vérifier : une habitude avec validation, une mission avec session, deux sessions facturables et deux règlements. Testez chaque suppression, puis contrôlez que les règlements sont conservés et que le solde non attribué est correct. Vous pouvez ensuite supprimer uniquement ces données temporaires depuis l’interface.
+
 ## Vérifier le résultat
 
 1. Ouvrez une nouvelle requête SQL.
@@ -71,6 +79,7 @@ Appliquez toujours ce fichier après les étapes précédentes. Il ajoute unique
 4. Vérifiez que chaque table runtime apparaît avec `rowsecurity = true`.
 5. Vérifiez que `work_sessions.title` est non nullable, et que les politiques des tables runtime s’adressent au rôle `authenticated` avec la vérification de propriétaire.
 6. Vérifiez la présence du trigger `ensure_app_settings_for_admin_on_profile`.
+7. Vérifiez également les fonctions `delete_habit_with_history`, `delete_project_keep_sessions`, `create_payment_and_rebuild_allocations`, `update_payment_and_rebuild_allocations`, `delete_payment_and_rebuild_allocations` et `delete_work_session_and_rebuild_allocations`.
 
 Les messages indiquant qu’un index, une table ou une colonne existe déjà sont normaux uniquement si vous savez qu’une migration a déjà été appliquée. En cas de doute, arrêtez-vous, lancez d’abord le fichier de vérification et comparez le résultat à ce guide.
 

@@ -7,7 +7,7 @@ Suivez les étapes dans cet ordre. Ne placez jamais une clé serveur Supabase da
 1. Dans Supabase, ouvrez **Table Editor**.
 2. Exportez en CSV les tables utilisées : `app_settings`, `habits`, `habit_entries`, `daily_notes`, `clients`, `projects`, `work_sessions`, `payments`, `payment_allocations`, `tasks`, `purchases`, `reports`, `report_sessions` et `admin_profile`.
 3. Conservez les exports hors du dépôt Git.
-4. Suivez les instructions pas à pas de [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
+4. Suivez les instructions pas à pas de [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y compris `20260720_v11_management.sql` avant toute fusion V1.1.
 5. Dans SQL Editor, exécutez `supabase/verify_production_schema.sql` et vérifiez le résultat avant le déploiement.
 
 ## 2. Variables Cloudflare Pages
@@ -47,7 +47,7 @@ Ne créez pas de variable `VITE_*` pour `service_role`, `sb_secret_*`, JWT secre
 4. Attendez le build Cloudflare Pages, puis ouvrez l’URL de production.
 5. Testez la checklist ci-dessous.
 
-Pour revenir en arrière, redéployez le déploiement Cloudflare précédent. Ne restaurez Supabase qu’à partir de la sauvegarde si une migration a réellement échoué ou produit un résultat inattendu.
+Pour revenir en arrière, redéployez le déploiement Cloudflare précédent. Ne restaurez Supabase qu’à partir de la sauvegarde si une migration a réellement échoué ou produit un résultat inattendu. Avant la fusion V1.1, testez la migration avec des données temporaires dans SQL Editor puis dans la branche de prévisualisation.
 
 ## 5. Checklist après déploiement
 

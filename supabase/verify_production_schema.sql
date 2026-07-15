@@ -61,3 +61,15 @@ from information_schema.columns
 where table_schema = 'public'
   and table_name = 'work_sessions'
   and column_name = 'title';
+
+-- 6. V1.1 management RPCs must be present and restricted from public execution.
+select proname, proconfig
+from pg_proc
+where pronamespace = 'public'::regnamespace
+  and proname in (
+    'delete_habit_with_history', 'delete_project_keep_sessions',
+    'create_payment_and_rebuild_allocations', 'update_payment_and_rebuild_allocations',
+    'delete_payment_and_rebuild_allocations', 'delete_work_session_and_rebuild_allocations',
+    'rebuild_client_payment_allocations', 'prevent_underallocated_work_session'
+  )
+order by proname;
