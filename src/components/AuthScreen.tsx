@@ -53,9 +53,9 @@ export default function AuthScreen({
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-paper px-6 py-10 text-ink">
+    <main className="auth-screen relative min-h-screen overflow-hidden px-6 py-10">
       <div className="minecraft-pattern pointer-events-none absolute inset-0" />
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-paper to-white" />
+      <div className="auth-screen-gradient absolute inset-0" />
 
       <motion.section
         initial={{ opacity: 0, y: 18 }}
@@ -63,18 +63,18 @@ export default function AuthScreen({
         transition={{ duration: 0.55, ease: 'easeOut' }}
         className="relative mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-md items-center"
       >
-        <div className="panel w-full p-7 sm:p-8">
+        <div className="panel auth-card w-full p-7 sm:p-8">
           <div className="mb-8 flex items-center justify-between">
             <div className="text-xl font-extrabold">
-              Rayzk<span className="text-forest">.</span>
+              Rayzk<span className="auth-accent">.</span>
             </div>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-paper text-forest">
+            <div className="auth-emblem flex h-11 w-11 items-center justify-center rounded-2xl">
               {mode === 'setup' ? <ShieldCheck size={21} /> : <Lock size={21} />}
             </div>
           </div>
 
-          <p className="text-sm font-semibold uppercase text-forest">
-            {mode === 'setup' ? 'Premier lancement' : 'Accès privé'}
+          <p className="auth-kicker text-sm font-semibold uppercase">
+            {mode === 'setup' ? 'Premier lancement' : 'Espace personnel'}
           </p>
           <h1 className="mt-3 text-3xl font-extrabold leading-tight sm:text-4xl">
             {mode === 'setup' ? 'Créer le compte admin.' : 'Connexion.'}
@@ -82,15 +82,15 @@ export default function AuthScreen({
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-gray-700">
+              <span className="auth-label mb-2 block text-sm font-semibold">
                 Email
               </span>
-              <span className="flex items-center gap-3 rounded-2xl border border-black/5 bg-paper px-4 py-3.5 text-gray-500 transition focus-within:border-forest/30 focus-within:bg-white">
+              <span className="auth-field-control flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition">
                 <Mail size={18} />
                 <input
                   required
                   autoComplete="email"
-                  className="w-full bg-transparent text-ink outline-none placeholder:text-gray-400"
+                  className="w-full bg-transparent outline-none"
                   inputMode="email"
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="email@domaine.fr"
@@ -101,17 +101,17 @@ export default function AuthScreen({
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-gray-700">
+              <span className="auth-label mb-2 block text-sm font-semibold">
                 Mot de passe
               </span>
-              <span className="flex items-center gap-3 rounded-2xl border border-black/5 bg-paper px-4 py-3.5 text-gray-500 transition focus-within:border-forest/30 focus-within:bg-white">
+              <span className="auth-field-control flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition">
                 <KeyRound size={18} />
                 <input
                   required
                   autoComplete={
                     mode === 'setup' ? 'new-password' : 'current-password'
                   }
-                  className="w-full bg-transparent text-ink outline-none placeholder:text-gray-400"
+                  className="w-full bg-transparent outline-none"
                   minLength={8}
                   onChange={(event) => setPassword(event.target.value)}
                   placeholder="8 caractères minimum"
@@ -122,19 +122,19 @@ export default function AuthScreen({
             </label>
 
             {error ? (
-              <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="auth-message auth-message-error rounded-2xl border px-4 py-3 text-sm">
                 {error}
               </p>
             ) : null}
 
             {message ? (
-              <p className="rounded-2xl border border-forest/10 bg-forest/10 px-4 py-3 text-sm text-forest">
+              <p className="auth-message auth-message-success rounded-2xl border px-4 py-3 text-sm">
                 {message}
               </p>
             ) : null}
 
             <button
-              className="focus-ring group inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-5 py-3.5 text-sm font-bold text-white transition hover:bg-forest disabled:cursor-not-allowed disabled:opacity-60"
+              className="auth-submit group inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
               disabled={submitting}
               type="submit"
             >
