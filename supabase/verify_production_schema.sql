@@ -24,7 +24,7 @@ where table_schema = 'public'
 order by table_name, ordinal_position;
 
 -- 3. Constraints and foreign-key behaviour.
-select conrelid::regclass as table_name, conname, pg_get_constraintdef(oid) as definition
+select conrelid::regclass::text as table_name, conname, pg_get_constraintdef(oid) as definition
 from pg_constraint
 where connamespace = 'public'::regnamespace
   and conrelid in (
@@ -36,7 +36,7 @@ where connamespace = 'public'::regnamespace
         'purchases', 'reports', 'report_sessions'
       )
   )
-order by table_name::text, conname;
+order by conrelid::regclass::text, conname;
 
 -- 4. Policies: each runtime table must show an authenticated owner-access policy.
 select tablename, policyname, roles, cmd, qual, with_check
