@@ -39,6 +39,15 @@ export function AppShell({ onSignOut }: { onSignOut: () => void }) {
           <nav>{navigation.map((item) => <NavItem key={item.to} {...item} />)}</nav>
         </div>
         <div className="sidebar-foot">
+          <div className="sidebar-profile">
+            <span className="profile-avatar">
+              {(settings?.display_name || 'Rayzk').slice(0, 1).toUpperCase()}
+            </span>
+            <span>
+              <b>{settings?.display_name || 'Rayzk'}</b>
+              <small>Compte personnel</small>
+            </span>
+          </div>
           <NavLink to="/settings" className="nav-item">
             <Settings size={19} />
             <span>Réglages</span>
@@ -53,7 +62,8 @@ export function AppShell({ onSignOut }: { onSignOut: () => void }) {
         <header className="topbar">
           <div>
             <p>{dateLabel(day)}</p>
-            <small>
+            <small className={`sync-status ${error ? 'error' : saving ? 'saving' : 'ready'}`}>
+              <i />
               {saving
                 ? 'Enregistrement…'
                 : error
@@ -61,6 +71,9 @@ export function AppShell({ onSignOut }: { onSignOut: () => void }) {
                   : 'Synchronisé'}
             </small>
           </div>
+          <button className="mobile-settings" onClick={() => navigate('/settings')} aria-label="Ouvrir les réglages">
+            <Settings size={19} />
+          </button>
         </header>
         {error ? (
           <div className="error-banner" role="alert">

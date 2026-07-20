@@ -1,42 +1,803 @@
-import { ChevronLeft, ChevronRight, FileText, ListFilter, Pencil, Plus, UserPlus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useAppData } from '../../app/AppDataProvider';
-import { ClientForm, MissionForm, PaymentForm, SessionForm } from '../../components/ui/Forms';
-import { Empty, Modal, Status } from '../../components/ui/Modal';
-import { clientSummary, financialSummary, projectsForClient, sessionPaymentState } from '../../lib/finance';
-import { euro, minutesLabel } from '../../lib/format';
-import type { Client, Payment, Project, WorkSession } from '../../types/domain';
-import { PaymentDetailsModal } from './PaymentDetailsModal';
-import { ReportPanel } from './ReportPanel';
-import { SessionDetailsModal } from './SessionDetailsModal';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  ListFilter,
+  Pencil,
+  Plus,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAppData } from "../../app/AppDataProvider";
+import { AppSelect } from "../../components/ui/AppSelect";
+import {
+  ClientForm,
+  MissionForm,
+  PaymentForm,
+  SessionForm,
+} from "../../components/ui/Forms";
+import { Empty, Modal, Status } from "../../components/ui/Modal";
+import {
+  clientSummary,
+  financialSummary,
+  projectsForClient,
+  sessionPaymentState,
+} from "../../lib/finance";
+import { euro, minutesLabel } from "../../lib/format";
+import {
+  missionCardClassName,
+  missionStatusPresentation,
+} from "../../lib/missionPresentation";
+import type { Client, Payment, Project, WorkSession } from "../../types/domain";
+import { PaymentDetailsModal } from "./PaymentDetailsModal";
+import { ReportPanel } from "./ReportPanel";
+import { SessionDetailsModal } from "./SessionDetailsModal";
 
-type Period = 'week' | 'month' | 'year' | 'all';
-type ModalName = 'client' | 'edit-client' | 'mission' | 'edit-mission' | 'session' | 'sessions' | 'payment' | 'report' | null;
+type Period = "week" | "month" | "year" | "all";
+type ModalName =
+  | "client"
+  | "edit-client"
+  | "mission"
+  | "edit-mission"
+  | "session"
+  | "sessions"
+  | "payment"
+  | "report"
+  | null;
 
 export function FreelancePage() {
-  const data = useAppData(); const [clientId, setClientId] = useState(''); const [mobileDetail, setMobileDetail] = useState(false); const [period, setPeriod] = useState<Period>('month'); const [modal, setModal] = useState<ModalName>(null); const [missionId, setMissionId] = useState<string | null>(null);
-  useEffect(() => { if (!clientId && data.clients.length) setClientId(data.clients.find((item) => item.status === 'active')?.id ?? data.clients[0].id); }, [clientId, data.clients]);
-  const client = data.clients.find((item) => item.id === clientId); const scopedSessions = periodSessions(data.sessions, period); const summary = globalSummary(data.clients, data.projects, scopedSessions, data.payments, data.allocations); const visibleClients = data.clients.filter((item) => item.status !== 'archived'); const selectClient = (id: string) => { setClientId(id); setMissionId(null); setMobileDetail(true); };
-  return <section className="page freelance-v051"><div className="page-intro"><div><p className="eyebrow">Freelance</p><h1>Chaque client a son espace.</h1></div><button className="button primary" onClick={() => setModal('client')}><UserPlus size={16}/> Ajouter un client</button></div><section className="panel freelance-global"><header className="section-title"><div><p className="eyebrow">Vue globale</p><h2>Suivi professionnel</h2></div><select className="period-select" value={period} onChange={(event) => setPeriod(event.target.value as Period)} aria-label="Période de la vue globale"><option value="week">Cette semaine</option><option value="month">Ce mois</option><option value="year">Cette année</option><option value="all">Tout</option></select></header><div className="metric-grid four"><Metric label="Travail valorisé" value={euro(summary.valued)} tone="amber"/><Metric label="Reçu" value={euro(summary.received)} tone="green"/><Metric label="À recevoir" value={euro(summary.remaining)} tone="brick"/><Metric label="Actifs" value={`${summary.activeClients} clients · ${summary.activeMissions} missions`}/></div></section><div className={`freelance-split ${mobileDetail ? 'mobile-detail' : ''}`}><aside className="client-pane"><header><div><p className="eyebrow">Clients</p><h2>Relations</h2></div><button className="icon-button" onClick={() => setModal('client')} aria-label="Ajouter un client"><Plus size={18}/></button></header><div className="client-list-v051">{visibleClients.map((item) => { const pending = clientSummary(item.id, data.sessions, data.payments, data.allocations).remaining; return <button className={item.id === clientId ? 'selected' : ''} onClick={() => selectClient(item.id)} key={item.id}><span><b>{item.name}</b><small>{pending > 0 ? `${euro(pending)} à recevoir` : 'À jour'}</small></span><ChevronRight size={16}/></button>; })}</div></aside><main className="client-workspace-v051">{client ? <ClientWorkspace client={client} period={period} onBack={() => setMobileDetail(false)} onModal={setModal} missionId={missionId} setMissionId={setMissionId}/> : <Empty>Ajoutez ou sélectionnez un client.</Empty>}</main></div>{modal === 'client' && <Modal title="Nouveau client" onClose={() => setModal(null)}><ClientForm onDone={() => setModal(null)}/></Modal>}{modal === 'edit-client' && client && <Modal title="Modifier le client" onClose={() => setModal(null)}><ClientForm client={client} onDone={() => setModal(null)}/><button className="text-link" onClick={() => void data.update('clients', client.id, { status: 'archived' }).then(() => setModal(null))}>Archiver ce client</button></Modal>}{modal === 'mission' && client && <Modal title="Nouvelle mission" onClose={() => setModal(null)}><MissionForm clientId={client.id} onDone={() => setModal(null)}/></Modal>}{modal === 'edit-mission' && missionId && <MissionEditor mission={data.projects.find((item) => item.id === missionId)} onClose={() => setModal(null)}/>} {modal === 'session' && client && <Modal title="Ajouter une session" onClose={() => setModal(null)}><SessionForm clientId={client.id} projectId={missionId ?? undefined} lockClient onDone={() => setModal(null)}/></Modal>}{modal === 'payment' && client && <Modal title="Enregistrer un règlement" onClose={() => setModal(null)}><PaymentForm client={client} projectId={missionId ?? undefined} onDone={() => setModal(null)}/></Modal>}{modal === 'sessions' && client && <SessionsModal client={client} initialMission={missionId} onClose={() => setModal(null)}/>} {modal === 'report' && client && <Modal title="Rapport client" onClose={() => setModal(null)}><ReportPanel clientId={client.id} projectId={missionId ?? undefined}/></Modal>}</section>;
+  const data = useAppData();
+  const [clientId, setClientId] = useState("");
+  const [mobileDetail, setMobileDetail] = useState(false);
+  const [period, setPeriod] = useState<Period>("month");
+  const [modal, setModal] = useState<ModalName>(null);
+  const [missionId, setMissionId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!clientId && data.clients.length)
+      setClientId(
+        data.clients.find((item) => item.status === "active")?.id ??
+          data.clients[0].id,
+      );
+  }, [clientId, data.clients]);
+  const client = data.clients.find((item) => item.id === clientId);
+  const scopedSessions = periodSessions(data.sessions, period);
+  const summary = globalSummary(
+    data.clients,
+    data.projects,
+    scopedSessions,
+    data.payments,
+    data.allocations,
+  );
+  const visibleClients = data.clients.filter(
+    (item) => item.status !== "archived",
+  );
+  const selectClient = (id: string) => {
+    setClientId(id);
+    setMissionId(null);
+    setMobileDetail(true);
+  };
+  return (
+    <section className="page freelance-v051">
+      <div className="page-intro">
+        <div>
+          <p className="eyebrow">Freelance</p>
+          <h1>Chaque client a son espace.</h1>
+        </div>
+        <button className="button primary" onClick={() => setModal("client")}>
+          <UserPlus size={16} /> Ajouter un client
+        </button>
+      </div>
+      <section className="panel freelance-global">
+        <header className="section-title">
+          <div>
+            <p className="eyebrow">Vue globale</p>
+            <h2>Suivi professionnel</h2>
+          </div>
+          <AppSelect
+            className="period-select"
+            ariaLabel="Période de la vue globale"
+            value={period}
+            onChange={(value) => setPeriod(value as Period)}
+            options={[
+              { value: "week", label: "Cette semaine" },
+              { value: "month", label: "Ce mois" },
+              { value: "year", label: "Cette année" },
+              { value: "all", label: "Tout" },
+            ]}
+          />
+        </header>
+        <div className="metric-grid four">
+          <Metric
+            label="Travail valorisé"
+            value={euro(summary.valued)}
+            tone="amber"
+          />
+          <Metric label="Reçu" value={euro(summary.received)} tone="green" />
+          <Metric
+            label="À recevoir"
+            value={euro(summary.remaining)}
+            tone="brick"
+          />
+          <Metric
+            label="Actifs"
+            value={`${summary.activeClients} clients · ${summary.activeMissions} missions`}
+          />
+        </div>
+      </section>
+      <div className={`freelance-split ${mobileDetail ? "mobile-detail" : ""}`}>
+        <aside className="client-pane">
+          <header>
+            <div>
+              <p className="eyebrow">Clients</p>
+              <h2>Relations</h2>
+            </div>
+            <button
+              className="icon-button"
+              onClick={() => setModal("client")}
+              aria-label="Ajouter un client"
+            >
+              <Plus size={18} />
+            </button>
+          </header>
+          <div className="client-list-v051">
+            {visibleClients.map((item) => {
+              const pending = clientSummary(
+                item.id,
+                data.sessions,
+                data.payments,
+                data.allocations,
+              ).remaining;
+              return (
+                <button
+                  className={item.id === clientId ? "selected" : ""}
+                  onClick={() => selectClient(item.id)}
+                  key={item.id}
+                >
+                  <span>
+                    <b>{item.name}</b>
+                    <small>
+                      {pending > 0 ? `${euro(pending)} à recevoir` : "À jour"}
+                    </small>
+                  </span>
+                  <ChevronRight size={16} />
+                </button>
+              );
+            })}
+          </div>
+        </aside>
+        <main className="client-workspace-v051">
+          {client ? (
+            <ClientWorkspace
+              client={client}
+              period={period}
+              onBack={() => setMobileDetail(false)}
+              onModal={setModal}
+              missionId={missionId}
+              setMissionId={setMissionId}
+            />
+          ) : (
+            <Empty>Ajoutez ou sélectionnez un client.</Empty>
+          )}
+        </main>
+      </div>
+      {modal === "client" && (
+        <Modal title="Nouveau client" onClose={() => setModal(null)}>
+          <ClientForm onDone={() => setModal(null)} />
+        </Modal>
+      )}
+      {modal === "edit-client" && client && (
+        <Modal title="Modifier le client" onClose={() => setModal(null)}>
+          <ClientForm client={client} onDone={() => setModal(null)} />
+          <button
+            className="text-link"
+            onClick={() =>
+              void data
+                .update("clients", client.id, { status: "archived" })
+                .then(() => setModal(null))
+            }
+          >
+            Archiver ce client
+          </button>
+        </Modal>
+      )}
+      {modal === "mission" && client && (
+        <Modal title="Nouvelle mission" onClose={() => setModal(null)}>
+          <MissionForm clientId={client.id} onDone={() => setModal(null)} />
+        </Modal>
+      )}
+      {modal === "edit-mission" && missionId && (
+        <MissionEditor
+          mission={data.projects.find((item) => item.id === missionId)}
+          onClose={() => setModal(null)}
+        />
+      )}{" "}
+      {modal === "session" && client && (
+        <Modal title="Ajouter une session" onClose={() => setModal(null)}>
+          <SessionForm
+            clientId={client.id}
+            projectId={missionId ?? undefined}
+            lockClient
+            onDone={() => setModal(null)}
+          />
+        </Modal>
+      )}
+      {modal === "payment" && client && (
+        <Modal title="Enregistrer un règlement" onClose={() => setModal(null)}>
+          <PaymentForm
+            client={client}
+            projectId={missionId ?? undefined}
+            onDone={() => setModal(null)}
+          />
+        </Modal>
+      )}
+      {modal === "sessions" && client && (
+        <SessionsModal
+          client={client}
+          initialMission={missionId}
+          onClose={() => setModal(null)}
+        />
+      )}{" "}
+      {modal === "report" && client && (
+        <Modal title="Rapport client" onClose={() => setModal(null)}>
+          <ReportPanel
+            clientId={client.id}
+            projectId={missionId ?? undefined}
+          />
+        </Modal>
+      )}
+    </section>
+  );
 }
 
-function ClientWorkspace({ client, period, onBack, onModal, missionId, setMissionId }: { client: Client; period: Period; onBack: () => void; onModal: (value: ModalName) => void; missionId: string | null; setMissionId: (id: string | null) => void }) {
-  const data = useAppData(); const sessions = periodSessions(data.sessions.filter((item) => item.client_id === client.id), period); const missions = projectsForClient(client.id, data.projects); const summary = clientSummary(client.id, sessions, data.payments, data.allocations); const recent = sessions.slice().sort((a, b) => b.session_date.localeCompare(a.session_date)).slice(0, 5);
-  return <><header className="client-workspace-head"><button className="mobile-back" onClick={onBack}><ChevronLeft size={16}/> Clients</button><div><p className="eyebrow">Client sélectionné</p><h2>{client.name}</h2><span>{client.hourly_rate === null ? 'Tarif global' : `${euro(Number(client.hourly_rate))} / h`}</span></div><div className="workspace-actions"><button className="button subtle" onClick={() => onModal('edit-client')}><Pencil size={15}/> Modifier</button><button className="button primary" onClick={() => onModal('session')}><Plus size={16}/> Ajouter une session</button></div></header><div className="metric-grid three"><Metric label="Travail valorisé" value={euro(summary.generated)} tone="amber"/><Metric label="Reçu" value={euro(summary.received)} tone="green"/><Metric label="À recevoir" value={euro(summary.remaining)} tone="brick"/></div><section className="workspace-section"><header><div><p className="eyebrow">Sessions</p><h3>Récentes</h3></div><button className="text-link" onClick={() => onModal('sessions')}>Voir toutes les sessions</button></header>{recent.length ? <div className="session-list-v051">{recent.map((session) => <SessionRow key={session.id} session={session} mission={missions.find((item) => item.id === session.project_id)}/>)}</div> : <Empty>Aucune session pour cette période.</Empty>}</section><section className="workspace-section"><header><div><p className="eyebrow">Missions</p><h3>Travail regroupé</h3></div><button className="text-link" onClick={() => onModal('mission')}>Ajouter une mission</button></header>{missions.length ? <div className="mission-list">{missions.map((mission) => <MissionRow key={mission.id} mission={mission} client={client} selected={mission.id === missionId} onClick={() => { setMissionId(mission.id); onModal('edit-mission'); }} onSession={() => { setMissionId(mission.id); onModal('session'); }}/>)}</div> : <Empty>Les petites interventions peuvent rester sans mission.</Empty>}</section><PaymentHistory client={client}/><div className="workspace-footer-actions"><button className="button subtle" onClick={() => onModal('payment')}>Enregistrer un règlement</button><button className="button subtle" onClick={() => onModal('report')}><FileText size={15}/> Rapport</button><button className="button subtle" onClick={() => onModal('sessions')}><ListFilter size={15}/> Filtrer les sessions</button></div></>;
+function ClientWorkspace({
+  client,
+  period,
+  onBack,
+  onModal,
+  missionId,
+  setMissionId,
+}: {
+  client: Client;
+  period: Period;
+  onBack: () => void;
+  onModal: (value: ModalName) => void;
+  missionId: string | null;
+  setMissionId: (id: string | null) => void;
+}) {
+  const data = useAppData();
+  const sessions = periodSessions(
+    data.sessions.filter((item) => item.client_id === client.id),
+    period,
+  );
+  const missions = projectsForClient(client.id, data.projects);
+  const summary = clientSummary(
+    client.id,
+    sessions,
+    data.payments,
+    data.allocations,
+  );
+  const recent = sessions
+    .slice()
+    .sort((a, b) => b.session_date.localeCompare(a.session_date))
+    .slice(0, 5);
+  return (
+    <>
+      <header className="client-workspace-head">
+        <button className="mobile-back" onClick={onBack}>
+          <ChevronLeft size={16} /> Clients
+        </button>
+        <div>
+          <p className="eyebrow">Client sélectionné</p>
+          <h2>{client.name}</h2>
+          <span>
+            {client.hourly_rate === null
+              ? "Tarif global"
+              : `${euro(Number(client.hourly_rate))} / h`}
+          </span>
+        </div>
+        <div className="workspace-actions">
+          <button
+            className="button subtle"
+            onClick={() => onModal("edit-client")}
+          >
+            <Pencil size={15} /> Modifier
+          </button>
+          <button className="button primary" onClick={() => onModal("session")}>
+            <Plus size={16} /> Ajouter une session
+          </button>
+        </div>
+      </header>
+      <div className="metric-grid three">
+        <Metric
+          label="Travail valorisé"
+          value={euro(summary.generated)}
+          tone="amber"
+        />
+        <Metric label="Reçu" value={euro(summary.received)} tone="green" />
+        <Metric
+          label="À recevoir"
+          value={euro(summary.remaining)}
+          tone="brick"
+        />
+      </div>
+      <section className="workspace-section">
+        <header>
+          <div>
+            <p className="eyebrow">Sessions</p>
+            <h3>Récentes</h3>
+          </div>
+          <button className="text-link" onClick={() => onModal("sessions")}>
+            Voir toutes les sessions
+          </button>
+        </header>
+        {recent.length ? (
+          <div className="session-list-v051">
+            {recent.map((session) => (
+              <SessionRow
+                key={session.id}
+                session={session}
+                mission={missions.find(
+                  (item) => item.id === session.project_id,
+                )}
+              />
+            ))}
+          </div>
+        ) : (
+          <Empty>Aucune session pour cette période.</Empty>
+        )}
+      </section>
+      <section className="workspace-section">
+        <header>
+          <div>
+            <p className="eyebrow">Missions</p>
+            <h3>Travail regroupé</h3>
+          </div>
+          <button className="text-link" onClick={() => onModal("mission")}>
+            Ajouter une mission
+          </button>
+        </header>
+        {missions.length ? (
+          <div className="mission-list">
+            {missions.map((mission) => (
+              <MissionRow
+                key={mission.id}
+                mission={mission}
+                client={client}
+                selected={mission.id === missionId}
+                onClick={() => {
+                  setMissionId(mission.id);
+                  onModal("edit-mission");
+                }}
+                onSession={() => {
+                  setMissionId(mission.id);
+                  onModal("session");
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          <Empty>Les petites interventions peuvent rester sans mission.</Empty>
+        )}
+      </section>
+      <PaymentHistory client={client} />
+      <div className="workspace-footer-actions">
+        <button className="button subtle" onClick={() => onModal("payment")}>
+          Enregistrer un règlement
+        </button>
+        <button className="button subtle" onClick={() => onModal("report")}>
+          <FileText size={15} /> Rapport
+        </button>
+        <button className="button subtle" onClick={() => onModal("sessions")}>
+          <ListFilter size={15} /> Filtrer les sessions
+        </button>
+      </div>
+    </>
+  );
 }
 
-function MissionEditor({ mission, onClose }: { mission?: Project; onClose: () => void }) {
-  const data = useAppData(); const [confirming, setConfirming] = useState(false); if (!mission) return null; const count = data.sessions.filter((item) => item.project_id === mission.id).length; const remove = async () => { try { await data.manage('delete_project_keep_sessions', { p_project_id: mission.id }); onClose(); } catch { /* AppShell exposes the request error. */ } };
-  return <Modal title="Modifier la mission" onClose={onClose}><MissionForm clientId={mission.client_id} mission={mission} onDone={onClose}/><div className="mission-editor-danger"><button className="text-link danger-action mission-delete-trigger" disabled={data.saving} onClick={() => setConfirming(true)}>Supprimer définitivement</button>{confirming && <section className="danger-confirm"><p><b>Supprimer définitivement cette mission ?</b></p><p>{count ? `Cette mission contient ${count} session(s). Elles seront conservées sans mission.` : 'Cette mission ne contient aucune session.'}</p><div className="button-row"><button className="button subtle" onClick={() => setConfirming(false)}>Annuler</button><button className="button brick" disabled={data.saving} onClick={() => void remove()}>{data.saving ? 'Suppression…' : 'Confirmer la suppression'}</button></div></section>}</div></Modal>;
+function MissionEditor({
+  mission,
+  onClose,
+}: {
+  mission?: Project;
+  onClose: () => void;
+}) {
+  const data = useAppData();
+  const [confirming, setConfirming] = useState(false);
+  if (!mission) return null;
+  const count = data.sessions.filter(
+    (item) => item.project_id === mission.id,
+  ).length;
+  const remove = async () => {
+    try {
+      await data.manage("delete_project_keep_sessions", {
+        p_project_id: mission.id,
+      });
+      onClose();
+    } catch {
+      /* AppShell exposes the request error. */
+    }
+  };
+  return (
+    <Modal title="Modifier la mission" onClose={onClose}>
+      <MissionForm
+        clientId={mission.client_id}
+        mission={mission}
+        onDone={onClose}
+      />
+      <div className="mission-editor-danger">
+        <button
+          className="button danger-secondary mission-delete-trigger"
+          disabled={data.saving}
+          onClick={() => setConfirming(true)}
+        >
+          <Trash2 size={16} /> Supprimer définitivement
+        </button>
+        {confirming && (
+          <section className="danger-confirm">
+            <p>
+              <b>Supprimer définitivement cette mission ?</b>
+            </p>
+            <p>
+              {count
+                ? `Cette mission contient ${count} session(s). Elles seront conservées sans mission.`
+                : "Cette mission ne contient aucune session."}
+            </p>
+            <div className="button-row">
+              <button
+                className="button subtle"
+                onClick={() => setConfirming(false)}
+              >
+                Annuler
+              </button>
+              <button
+                className="button brick"
+                disabled={data.saving}
+                onClick={() => void remove()}
+              >
+                {data.saving ? "Suppression…" : "Confirmer la suppression"}
+              </button>
+            </div>
+          </section>
+        )}
+      </div>
+    </Modal>
+  );
 }
 
-function PaymentHistory({ client }: { client: Client }) { const data = useAppData(); const [payment, setPayment] = useState<Payment | null>(null); const payments = data.payments.filter((item) => item.client_id === client.id).slice().sort((a, b) => b.payment_date.localeCompare(a.payment_date) || b.created_at.localeCompare(a.created_at)); return <section className="workspace-section"><header><div><p className="eyebrow">Règlements</p><h3>Historique des règlements</h3></div></header>{payments.length ? <div className="payment-history">{payments.map((item) => { const allocations = data.allocations.filter((allocation) => allocation.payment_id === item.id); const allocated = allocations.reduce((sum, allocation) => sum + Number(allocation.allocated_amount), 0); const unallocated = Math.max(0, Number(item.amount_received) - allocated); return <button className="payment-history-row" key={item.id} onClick={() => setPayment(item)}><span><b>{euro(Number(item.amount_received))} reçus le {item.payment_date}</b><small>{euro(allocated)} attribués à {allocations.length} session(s) · {euro(unallocated)} non attribués</small></span><ChevronRight size={16}/></button>; })}</div> : <Empty>Aucun règlement enregistré.</Empty>}{payment && <PaymentDetailsModal payment={payment} onClose={() => setPayment(null)}/>}</section>; }
+function PaymentHistory({ client }: { client: Client }) {
+  const data = useAppData();
+  const [payment, setPayment] = useState<Payment | null>(null);
+  const payments = data.payments
+    .filter((item) => item.client_id === client.id)
+    .slice()
+    .sort(
+      (a, b) =>
+        b.payment_date.localeCompare(a.payment_date) ||
+        b.created_at.localeCompare(a.created_at),
+    );
+  return (
+    <section className="workspace-section">
+      <header>
+        <div>
+          <p className="eyebrow">Règlements</p>
+          <h3>Historique des règlements</h3>
+        </div>
+      </header>
+      {payments.length ? (
+        <div className="payment-history">
+          {payments.map((item) => {
+            const allocations = data.allocations.filter(
+              (allocation) => allocation.payment_id === item.id,
+            );
+            const allocated = allocations.reduce(
+              (sum, allocation) => sum + Number(allocation.allocated_amount),
+              0,
+            );
+            const unallocated = Math.max(
+              0,
+              Number(item.amount_received) - allocated,
+            );
+            return (
+              <button
+                className="payment-history-row"
+                key={item.id}
+                onClick={() => setPayment(item)}
+              >
+                <span>
+                  <b>
+                    {euro(Number(item.amount_received))} reçus le{" "}
+                    {item.payment_date}
+                  </b>
+                  <small>
+                    {euro(allocated)} attribués à {allocations.length}{" "}
+                    session(s) · {euro(unallocated)} non attribués
+                  </small>
+                </span>
+                <ChevronRight size={16} />
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <Empty>Aucun règlement enregistré.</Empty>
+      )}
+      {payment && (
+        <PaymentDetailsModal
+          payment={payment}
+          onClose={() => setPayment(null)}
+        />
+      )}
+    </section>
+  );
+}
 
-function SessionsModal({ client, initialMission, onClose }: { client: Client; initialMission: string | null; onClose: () => void }) { const data = useAppData(); const [filter, setFilter] = useState<'all' | 'month' | 'paid' | 'unpaid'>('all'); const [mission, setMission] = useState(initialMission ?? ''); const [from, setFrom] = useState(''); const [to, setTo] = useState(''); let sessions = data.sessions.filter((item) => item.client_id === client.id); if (filter === 'month') sessions = sessions.filter((item) => item.session_date.startsWith(new Date().toISOString().slice(0, 7))); if (filter === 'paid') sessions = sessions.filter((item) => sessionPaymentState(item, data.allocations) === 'paid'); if (filter === 'unpaid') sessions = sessions.filter((item) => sessionPaymentState(item, data.allocations) !== 'paid'); if (mission === 'none') sessions = sessions.filter((item) => !item.project_id); else if (mission) sessions = sessions.filter((item) => item.project_id === mission); if (from) sessions = sessions.filter((item) => item.session_date >= from); if (to) sessions = sessions.filter((item) => item.session_date <= to); const missions = projectsForClient(client.id, data.projects); return <Modal title={`Sessions · ${client.name}`} onClose={onClose}><div className="filter-row"><button className={filter === 'all' ? 'selected' : ''} onClick={() => setFilter('all')}>Toutes</button><button className={filter === 'month' ? 'selected' : ''} onClick={() => setFilter('month')}>Ce mois-ci</button><button className={filter === 'paid' ? 'selected' : ''} onClick={() => setFilter('paid')}>Payées</button><button className={filter === 'unpaid' ? 'selected' : ''} onClick={() => setFilter('unpaid')}>À recevoir</button></div><details className="secondary-filters"><summary>Filtres</summary><label className="field"><span>Mission</span><select value={mission} onChange={(event) => setMission(event.target.value)}><option value="">Toutes les missions</option><option value="none">Sans mission</option>{missions.map((item) => <option value={item.id} key={item.id}>{item.name}</option>)}</select></label><div className="field-row"><label className="field"><span>Du</span><input type="date" value={from} onChange={(event) => setFrom(event.target.value)}/></label><label className="field"><span>Au</span><input type="date" value={to} onChange={(event) => setTo(event.target.value)}/></label></div></details><div className="session-list-v051">{sessions.map((session) => <SessionRow key={session.id} session={session} mission={missions.find((item) => item.id === session.project_id)}/>)}</div></Modal>; }
+function SessionsModal({
+  client,
+  initialMission,
+  onClose,
+}: {
+  client: Client;
+  initialMission: string | null;
+  onClose: () => void;
+}) {
+  const data = useAppData();
+  const [filter, setFilter] = useState<"all" | "month" | "paid" | "unpaid">(
+    "all",
+  );
+  const [mission, setMission] = useState(initialMission ?? "");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  let sessions = data.sessions.filter((item) => item.client_id === client.id);
+  if (filter === "month")
+    sessions = sessions.filter((item) =>
+      item.session_date.startsWith(new Date().toISOString().slice(0, 7)),
+    );
+  if (filter === "paid")
+    sessions = sessions.filter(
+      (item) => sessionPaymentState(item, data.allocations) === "paid",
+    );
+  if (filter === "unpaid")
+    sessions = sessions.filter(
+      (item) => sessionPaymentState(item, data.allocations) !== "paid",
+    );
+  if (mission === "none")
+    sessions = sessions.filter((item) => !item.project_id);
+  else if (mission)
+    sessions = sessions.filter((item) => item.project_id === mission);
+  if (from) sessions = sessions.filter((item) => item.session_date >= from);
+  if (to) sessions = sessions.filter((item) => item.session_date <= to);
+  const missions = projectsForClient(client.id, data.projects);
+  return (
+    <Modal title={`Sessions · ${client.name}`} onClose={onClose}>
+      <div className="filter-row">
+        <button
+          className={filter === "all" ? "selected" : ""}
+          onClick={() => setFilter("all")}
+        >
+          Toutes
+        </button>
+        <button
+          className={filter === "month" ? "selected" : ""}
+          onClick={() => setFilter("month")}
+        >
+          Ce mois-ci
+        </button>
+        <button
+          className={filter === "paid" ? "selected" : ""}
+          onClick={() => setFilter("paid")}
+        >
+          Payées
+        </button>
+        <button
+          className={filter === "unpaid" ? "selected" : ""}
+          onClick={() => setFilter("unpaid")}
+        >
+          À recevoir
+        </button>
+      </div>
+      <details className="secondary-filters">
+        <summary>Filtres</summary>
+        <label className="field">
+          <span>Mission</span>
+          <AppSelect
+            ariaLabel="Filtrer les sessions par mission"
+            value={mission}
+            onChange={setMission}
+            options={[
+              { value: "", label: "Toutes les missions" },
+              { value: "none", label: "Sans mission" },
+              ...missions.map((item) => ({ value: item.id, label: item.name })),
+            ]}
+          />
+        </label>
+        <div className="field-row">
+          <label className="field">
+            <span>Du</span>
+            <input
+              type="date"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
+            />
+          </label>
+          <label className="field">
+            <span>Au</span>
+            <input
+              type="date"
+              value={to}
+              onChange={(event) => setTo(event.target.value)}
+            />
+          </label>
+        </div>
+      </details>
+      <div className="session-list-v051">
+        {sessions.map((session) => (
+          <SessionRow
+            key={session.id}
+            session={session}
+            mission={missions.find((item) => item.id === session.project_id)}
+          />
+        ))}
+      </div>
+    </Modal>
+  );
+}
 
-function MissionRow({ mission, client, selected, onClick, onSession }: { mission: Project; client: Client; selected: boolean; onClick: () => void; onSession: () => void }) { const data = useAppData(); const sessions = data.sessions.filter((item) => item.project_id === mission.id); const summary = clientSummary(client.id, sessions, data.payments.filter((item) => item.project_id === mission.id), data.allocations); const status = mission.status === 'in_progress' ? 'En cours' : mission.status === 'planned' ? 'À faire' : mission.status === 'waiting' ? 'En attente' : 'Terminé'; return <article className={`mission-row mission-status-${mission.status} ${selected ? 'selected' : ''}`}><button onClick={onClick}><span><b>{mission.name}</b><small>{status} · {minutesLabel(sessions.reduce((sum, item) => sum + Number(item.duration_minutes || 0), 0))}</small></span><strong>{euro(summary.generated)}<small>{euro(summary.remaining)} à recevoir</small></strong></button><button className="icon-button" onClick={onSession} aria-label="Ajouter une session à cette mission"><Plus size={16}/></button></article>; }
+function MissionRow({
+  mission,
+  client,
+  selected,
+  onClick,
+  onSession,
+}: {
+  mission: Project;
+  client: Client;
+  selected: boolean;
+  onClick: () => void;
+  onSession: () => void;
+}) {
+  const data = useAppData();
+  const sessions = data.sessions.filter(
+    (item) => item.project_id === mission.id,
+  );
+  const summary = clientSummary(
+    client.id,
+    sessions,
+    data.payments.filter((item) => item.project_id === mission.id),
+    data.allocations,
+  );
+  const status = missionStatusPresentation(mission.status);
+  return (
+    <article className={missionCardClassName(selected)}>
+      <button onClick={onClick}>
+        <span>
+          <b>{mission.name}</b>
+          <small>
+            <span className={`mission-status-text ${status.tone}`}>
+              {status.label}
+            </span>
+            <span aria-hidden="true"> · </span>
+            {minutesLabel(
+              sessions.reduce(
+                (sum, item) => sum + Number(item.duration_minutes || 0),
+                0,
+              ),
+            )}
+          </small>
+        </span>
+        <strong>
+          {euro(summary.generated)}
+          <small>{euro(summary.remaining)} à recevoir</small>
+        </strong>
+      </button>
+      <button
+        className="icon-button"
+        onClick={onSession}
+        aria-label="Ajouter une session à cette mission"
+      >
+        <Plus size={16} />
+      </button>
+    </article>
+  );
+}
 
-export function SessionRow({ session, mission }: { session: WorkSession; mission?: Project }) { const data = useAppData(); const [opened, setOpened] = useState(false); const state = sessionPaymentState(session, data.allocations); return <><article className="session-row-v051 session-openable" tabIndex={0} role="button" onClick={() => setOpened(true)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setOpened(true); } }}><div><button className="session-title-button" onClick={() => setOpened(true)}>{session.title}</button><small>{session.session_date} · {minutesLabel(Number(session.duration_minutes || 0))}{mission ? ` · ${mission.name}` : ''}</small></div><div><strong>{euro(Number(session.gross_amount))}</strong><Status>{state === 'paid' ? 'Payée' : state === 'partial' ? 'Partiellement payée' : 'Non payée'}</Status></div></article>{opened && <SessionDetailsModal session={session} onClose={() => setOpened(false)}/>}</>; }
-function Metric({ label, value, tone = '' }: { label: string; value: string; tone?: string }) { return <div className={`metric ${tone}`}><span>{label}</span><strong>{value}</strong></div>; }
-function globalSummary(clients: Client[], projects: Project[], sessions: WorkSession[], payments: Payment[], allocations: ReturnType<typeof useAppData>['allocations']) { const totals = financialSummary(sessions, payments, allocations); return { ...totals, activeClients: clients.filter((item) => item.status === 'active').length, activeMissions: projects.filter((item) => item.status === 'in_progress').length }; }
-function periodSessions(sessions: WorkSession[], period: Period) { if (period === 'all') return sessions; const start = new Date(); if (period === 'week') { const day = start.getDay() || 7; start.setDate(start.getDate() - day + 1); } else if (period === 'month') start.setDate(1); else start.setMonth(0, 1); const key = start.toISOString().slice(0, 10); return sessions.filter((item) => item.session_date >= key); }
+export function SessionRow({
+  session,
+  mission,
+}: {
+  session: WorkSession;
+  mission?: Project;
+}) {
+  const data = useAppData();
+  const [opened, setOpened] = useState(false);
+  const state = sessionPaymentState(session, data.allocations);
+  return (
+    <>
+      <article
+        className="session-row-v051 session-openable"
+        tabIndex={0}
+        role="button"
+        onClick={() => setOpened(true)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setOpened(true);
+          }
+        }}
+      >
+        <div>
+          <button
+            className="session-title-button"
+            onClick={() => setOpened(true)}
+          >
+            {session.title}
+          </button>
+          <small>
+            {session.session_date} ·{" "}
+            {minutesLabel(Number(session.duration_minutes || 0))}
+            {mission ? ` · ${mission.name}` : ""}
+          </small>
+        </div>
+        <div>
+          <strong>{euro(Number(session.gross_amount))}</strong>
+          <Status>
+            {state === "paid"
+              ? "Payée"
+              : state === "partial"
+                ? "Partiellement payée"
+                : "Non payée"}
+          </Status>
+        </div>
+      </article>
+      {opened && (
+        <SessionDetailsModal
+          session={session}
+          onClose={() => setOpened(false)}
+        />
+      )}
+    </>
+  );
+}
+function Metric({
+  label,
+  value,
+  tone = "",
+}: {
+  label: string;
+  value: string;
+  tone?: string;
+}) {
+  return (
+    <div className={`metric ${tone}`}>
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+function globalSummary(
+  clients: Client[],
+  projects: Project[],
+  sessions: WorkSession[],
+  payments: Payment[],
+  allocations: ReturnType<typeof useAppData>["allocations"],
+) {
+  const totals = financialSummary(sessions, payments, allocations);
+  return {
+    ...totals,
+    activeClients: clients.filter((item) => item.status === "active").length,
+    activeMissions: projects.filter((item) => item.status === "in_progress")
+      .length,
+  };
+}
+function periodSessions(sessions: WorkSession[], period: Period) {
+  if (period === "all") return sessions;
+  const start = new Date();
+  if (period === "week") {
+    const day = start.getDay() || 7;
+    start.setDate(start.getDate() - day + 1);
+  } else if (period === "month") start.setDate(1);
+  else start.setMonth(0, 1);
+  const key = start.toISOString().slice(0, 10);
+  return sessions.filter((item) => item.session_date >= key);
+}

@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="18" fill="#0a0a0a"/>
-  <path fill="#fafafa" d="M17 42V20h10.2c5 0 8.2 2.7 8.2 7 0 2.9-1.5 5.1-4.1 6.1L37 42h-6.2l-5.1-8h-3.2v8H17Zm5.5-12.7h4.1c2.1 0 3.2-.8 3.2-2.3s-1.1-2.3-3.2-2.3h-4.1v4.6Z"/>
-  <circle cx="44" cy="39" r="4" fill="#0f3d2e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Rayzk Dashboard">
+  <rect width="64" height="64" rx="14" ry="14" fill="#07090D"/>
+  <path fill="#F5F5F7" fill-rule="evenodd" d="M12 14h15c8.5 0 13.5 4.4 13.5 12 0 5.2-2.8 8.9-7.4 10.7L41.5 50h-9.1L25 39h-5v11h-8V14Zm8 7v11h6.6c3.8 0 5.8-1.8 5.8-5.5S30.4 21 26.6 21H20Z"/>
+  <circle cx="48" cy="45" r="4.8" fill="#0A84FF"/>
 </svg>
