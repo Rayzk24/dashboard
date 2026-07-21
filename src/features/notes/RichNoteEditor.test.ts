@@ -35,6 +35,16 @@ function pressTab(editor: Editor, shiftKey = false) {
   }));
 }
 
+type TestJsonNode = {
+  type?: string;
+  attrs?: Record<string, unknown>;
+  content?: TestJsonNode[];
+};
+
+function firstListItems(editor: Editor) {
+  return (editor.getJSON() as unknown as TestJsonNode).content?.[0]?.content ?? [];
+}
+
 afterEach(() => {
   editors.splice(0).forEach((editor) => editor.destroy());
   document.body.innerHTML = '';
@@ -123,19 +133,72 @@ describe('éditeur de notes', () => {
     expect(editor.getJSON().content?.[0]?.content?.[0]?.marks).toBeUndefined();
   });
 
-  it('imbrique et remonte les listes et checklists avec Tab et Maj + Tab', () => {
-    for (const content of [
-      '<ul><li><p>Premier</p></li><li><p>Second</p></li></ul>',
-      '<ol><li><p>Premier</p></li><li><p>Second</p></li></ol>',
-      '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>Premier</p></li><li data-type="taskItem" data-checked="false"><p>Second</p></li></ul>',
-    ]) {
-      const editor = editorWith(content);
-      cursorIn(editor, 'Second');
-      pressTab(editor);
-      expect(editor.getJSON().content?.[0]?.content).toHaveLength(1);
-      pressTab(editor, true);
-      expect(editor.getJSON().content?.[0]?.content).toHaveLength(2);
-    }
+  it.each([
+    ['liste à puces', '<ul><li><p>Premier</p></li></ul>'],
+    ['liste numérotée', '<ol><li><p>Premier</p></li></ol>'],
+    ['checklist', '<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>Premier</p></li></ul>'],
+  ])('Tab indente visuellement le premier élément d’une %s', (_, content) => {
+    const editor = editorWith(content);
+    cursorIn(editor, 'Premier');
+    pressTab(editor);
+    const items = firstListItems(editor);
+    expect(items).toHaveLength(1);
+    expect(items[0]?.attrs?.indentLevel).toBe(1);
+    expect(items[0]?.content?.some((node) => ['bulletList', 'orderedList', 'taskList'].includes(node.type ?? ''))).toBe(false);
+    pressTab(editor, true);
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(0);
+    pressTab(editor, true);
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(0);
+  });
+
+  it('conserve la numérotation et la structure plate d’une liste ordonnée', () => {
+    const editor = editorWith('<ol><li><p>Premier</p></li><li><p>Deuxième</p></li><li><p>Troisième</p></li></ol>');
+    cursorIn(editor, 'Deuxième');
+    pressTab(editor);
+    const items = firstListItems(editor);
+    const ordered = editor.view.dom.querySelector('ol') as HTMLOListElement;
+    expect(items).toHaveLength(3);
+    expect(items[1]?.attrs?.indentLevel).toBe(1);
+    expect(ordered.children).toHaveLength(3);
+    expect(ordered.children[1]?.getAttribute('data-indent-level')).toBe('1');
+    expect(ordered.querySelector('ol')).toBeNull();
+  });
+
+  it('limite les éléments de liste entre zéro et six niveaux', () => {
+    const editor = editorWith('<ul><li><p>Élément</p></li></ul>');
+    cursorIn(editor, 'Élément');
+    for (let index = 0; index < noteIndentationLimit + 2; index += 1) pressTab(editor);
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(noteIndentationLimit);
+    for (let index = 0; index < noteIndentationLimit + 2; index += 1) pressTab(editor, true);
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(0);
+  });
+
+  it('préserve la checkbox et son état pendant le retrait', () => {
+    const editor = editorWith('<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><p>Terminée</p></li></ul>');
+    cursorIn(editor, 'Terminée');
+    pressTab(editor);
+    expect(firstListItems(editor)[0]?.attrs).toMatchObject({ checked: true, indentLevel: 1 });
+    expect(editor.view.dom.querySelector('input[type="checkbox"]:checked')).not.toBeNull();
+  });
+
+  it('annule et rétablit le retrait visuel d’une liste', () => {
+    const editor = editorWith('<ul><li><p>Élément</p></li></ul>');
+    cursorIn(editor, 'Élément');
+    pressTab(editor);
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(1);
+    editor.commands.undo();
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(0);
+    editor.commands.redo();
+    expect(firstListItems(editor)[0]?.attrs?.indentLevel).toBe(1);
+  });
+
+  it('conserve les anciennes vraies sous-listes', () => {
+    const editor = editorWith('<ul><li><p>Parent</p><ul><li><p>Enfant</p></li></ul></li></ul>');
+    expect(editor.view.dom.querySelector('ul ul')).not.toBeNull();
+    cursorIn(editor, 'Enfant');
+    pressTab(editor);
+    expect(editor.view.dom.querySelector('ul ul')).not.toBeNull();
+    expect(JSON.stringify(editor.getJSON())).toContain('"indentLevel":1');
   });
 
   it('conserve des structures distinctes pour les puces et les numéros', () => {

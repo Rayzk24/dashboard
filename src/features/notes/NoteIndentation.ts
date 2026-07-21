@@ -9,6 +9,8 @@ declare module '@tiptap/core' {
     noteIndentation: {
       increaseNoteIndent: () => ReturnType;
       decreaseNoteIndent: () => ReturnType;
+      increaseListItemIndent: () => ReturnType;
+      decreaseListItemIndent: () => ReturnType;
     };
   }
 }
@@ -23,6 +25,20 @@ function textIndentChange(editor: Editor, delta: number) {
   const nodeName = activeTextNode(editor);
   if (!nodeName) return null;
   const current = Number(editor.getAttributes(nodeName).indent ?? 0);
+  const next = Math.min(MAX_INDENT, Math.max(0, current + delta));
+  return { current, next, nodeName };
+}
+
+function activeListItemNode(editor: Editor) {
+  if (editor.isActive('taskItem')) return 'taskItem';
+  if (editor.isActive('listItem')) return 'listItem';
+  return null;
+}
+
+function listItemIndentChange(editor: Editor, delta: number) {
+  const nodeName = activeListItemNode(editor);
+  if (!nodeName) return null;
+  const current = Number(editor.getAttributes(nodeName).indentLevel ?? 0);
   const next = Math.min(MAX_INDENT, Math.max(0, current + delta));
   return { current, next, nodeName };
 }
@@ -107,6 +123,25 @@ export const NoteIndentation = Extension.create({
           },
         },
       },
+      {
+        types: ['listItem', 'taskItem'],
+        attributes: {
+          indentLevel: {
+            default: 0,
+            parseHTML: (element) => {
+              const value = Number(element.getAttribute('data-indent-level') ?? 0);
+              return Math.min(MAX_INDENT, Math.max(0, Number.isFinite(value) ? value : 0));
+            },
+            renderHTML: (attributes) => {
+              const indentLevel = Math.min(
+                MAX_INDENT,
+                Math.max(0, Number(attributes.indentLevel ?? 0)),
+              );
+              return indentLevel ? { 'data-indent-level': String(indentLevel) } : {};
+            },
+          },
+        },
+      },
     ];
   },
 
@@ -126,20 +161,33 @@ export const NoteIndentation = Extension.create({
           ? true
           : commands.updateAttributes(change.nodeName, { indent: change.next });
       },
+      increaseListItemIndent: () => ({ editor, commands }) => {
+        const change = listItemIndentChange(editor, 1);
+        if (!change) return false;
+        return change.next === change.current
+          ? true
+          : commands.updateAttributes(change.nodeName, { indentLevel: change.next });
+      },
+      decreaseListItemIndent: () => ({ editor, commands }) => {
+        const change = listItemIndentChange(editor, -1);
+        if (!change) return false;
+        return change.next === change.current
+          ? true
+          : commands.updateAttributes(change.nodeName, { indentLevel: change.next });
+      },
     };
   },
 
   addKeyboardShortcuts() {
-    const inList = () => this.editor.isActive('listItem') || this.editor.isActive('taskItem');
     return {
       Tab: () => {
         if (this.editor.isActive('codeBlock')) return indentCode(this.editor);
-        if (inList()) return false;
+        if (activeListItemNode(this.editor)) return this.editor.commands.increaseListItemIndent();
         return this.editor.commands.increaseNoteIndent();
       },
       'Shift-Tab': () => {
         if (this.editor.isActive('codeBlock')) return outdentCode(this.editor);
-        if (inList()) return false;
+        if (activeListItemNode(this.editor)) return this.editor.commands.decreaseListItemIndent();
         return this.editor.commands.decreaseNoteIndent();
       },
     };

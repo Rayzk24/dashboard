@@ -2648,6 +2648,36 @@ main .text-red-700 {
   margin: 0.16em 0;
 }
 
+.note-rich-editor .tiptap ul li[data-indent-level="1"],
+.note-rich-editor .tiptap ol li[data-indent-level="1"] {
+  margin-left: 24px;
+}
+
+.note-rich-editor .tiptap ul li[data-indent-level="2"],
+.note-rich-editor .tiptap ol li[data-indent-level="2"] {
+  margin-left: 48px;
+}
+
+.note-rich-editor .tiptap ul li[data-indent-level="3"],
+.note-rich-editor .tiptap ol li[data-indent-level="3"] {
+  margin-left: 72px;
+}
+
+.note-rich-editor .tiptap ul li[data-indent-level="4"],
+.note-rich-editor .tiptap ol li[data-indent-level="4"] {
+  margin-left: 96px;
+}
+
+.note-rich-editor .tiptap ul li[data-indent-level="5"],
+.note-rich-editor .tiptap ol li[data-indent-level="5"] {
+  margin-left: 120px;
+}
+
+.note-rich-editor .tiptap ul li[data-indent-level="6"],
+.note-rich-editor .tiptap ol li[data-indent-level="6"] {
+  margin-left: 144px;
+}
+
 .note-rich-editor .tiptap ul[data-type="taskList"] label {
   display: grid;
   width: 30px;
