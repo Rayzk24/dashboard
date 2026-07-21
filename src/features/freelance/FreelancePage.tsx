@@ -20,6 +20,7 @@ import {
 import { Empty, Modal, Status } from "../../components/ui/Modal";
 import {
   clientSummary,
+  financialDataForPeriod,
   financialSummary,
   projectsForClient,
   sessionPaymentState,
@@ -61,12 +62,12 @@ export function FreelancePage() {
       );
   }, [clientId, data.clients]);
   const client = data.clients.find((item) => item.id === clientId);
-  const scopedSessions = periodSessions(data.sessions, period);
+  const scoped = financialDataForPeriod(data.sessions, data.payments, period);
   const summary = globalSummary(
     data.clients,
     data.projects,
-    scopedSessions,
-    data.payments,
+    scoped.sessions,
+    scoped.payments,
     data.allocations,
   );
   const visibleClients = data.clients.filter(
@@ -266,15 +267,17 @@ function ClientWorkspace({
   setMissionId: (id: string | null) => void;
 }) {
   const data = useAppData();
-  const sessions = periodSessions(
+  const scoped = financialDataForPeriod(
     data.sessions.filter((item) => item.client_id === client.id),
+    data.payments.filter((item) => item.client_id === client.id),
     period,
   );
+  const sessions = scoped.sessions;
   const missions = projectsForClient(client.id, data.projects);
   const summary = clientSummary(
     client.id,
     sessions,
-    data.payments,
+    scoped.payments,
     data.allocations,
   );
   const recent = sessions
@@ -789,15 +792,4 @@ function globalSummary(
     activeMissions: projects.filter((item) => item.status === "in_progress")
       .length,
   };
-}
-function periodSessions(sessions: WorkSession[], period: Period) {
-  if (period === "all") return sessions;
-  const start = new Date();
-  if (period === "week") {
-    const day = start.getDay() || 7;
-    start.setDate(start.getDate() - day + 1);
-  } else if (period === "month") start.setDate(1);
-  else start.setMonth(0, 1);
-  const key = start.toISOString().slice(0, 10);
-  return sessions.filter((item) => item.session_date >= key);
 }

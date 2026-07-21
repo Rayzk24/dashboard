@@ -23,3 +23,50 @@ export function allocationPlan(sessions: WorkSession[], allocations: PaymentAllo
 export function paymentBreakdown(payment: Payment, allocations: PaymentAllocation[]) { const allocated = allocations.filter((item) => item.payment_id === payment.id).reduce((sum, item) => sum + Number(item.allocated_amount), 0); return { allocated, unallocated: Math.max(0, Number(payment.amount_received) - allocated) }; }
 export function canSetSessionAmount(nextGrossAmount: number, alreadyAllocated: number) { return Number(nextGrossAmount) >= Number(alreadyAllocated); }
 export function deterministicAllocationPlan(sessions: WorkSession[], payments: Payment[]) { const planned: Array<{ paymentId: string; workSessionId: string; amount: number }> = []; const occupied = new Map<string, number>(); for (const payment of payments.filter((item) => item.status !== 'cancelled').slice().sort((a, b) => a.payment_date.localeCompare(b.payment_date) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) { let available = Number(payment.amount_received); for (const session of sessions.filter((item) => !item.is_running && item.time_category === 'billable').slice().sort((a, b) => a.session_date.localeCompare(b.session_date) || a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id))) { const amount = Math.min(available, Math.max(0, Number(session.gross_amount) - Number(occupied.get(session.id) ?? 0))); if (amount > 0) { planned.push({ paymentId: payment.id, workSessionId: session.id, amount }); occupied.set(session.id, Number(occupied.get(session.id) ?? 0) + amount); available -= amount; } if (available <= 0) break; } } return planned; }
+
+export type FinancialPeriod = 'week' | 'month' | 'year' | 'all';
+
+function localDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function financialPeriodBounds(
+  period: Exclude<FinancialPeriod, 'all'>,
+  now = new Date(),
+) {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start);
+
+  if (period === 'week') {
+    const weekday = start.getDay() || 7;
+    start.setDate(start.getDate() - weekday + 1);
+    end.setTime(start.getTime());
+    end.setDate(end.getDate() + 6);
+  } else if (period === 'month') {
+    start.setDate(1);
+    end.setFullYear(start.getFullYear(), start.getMonth() + 1, 0);
+  } else {
+    start.setMonth(0, 1);
+    end.setFullYear(start.getFullYear(), 11, 31);
+  }
+
+  return { start: localDateKey(start), end: localDateKey(end) };
+}
+
+export function financialDataForPeriod(
+  sessions: WorkSession[],
+  payments: Payment[],
+  period: FinancialPeriod,
+  now = new Date(),
+) {
+  if (period === 'all') return { sessions, payments };
+  const bounds = financialPeriodBounds(period, now);
+  const includes = (date: string) => date >= bounds.start && date <= bounds.end;
+  return {
+    sessions: sessions.filter((item) => includes(item.session_date)),
+    payments: payments.filter((item) => includes(item.payment_date)),
+  };
+}
