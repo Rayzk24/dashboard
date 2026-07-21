@@ -11,6 +11,7 @@ export function paymentStatus(expected: number, received: number, status: Paymen
 export function sessionPaymentState(session: WorkSession, allocations: PaymentAllocation[]) { const covered = allocationTotal(session.id, allocations); if (covered >= Number(session.gross_amount) && Number(session.gross_amount) > 0) return 'paid'; return covered > 0 ? 'partial' : 'unpaid'; }
 export function lastProjectForClient(clientId: string, sessions: WorkSession[]) { return sessions.filter((session) => session.client_id === clientId && session.project_id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.project_id ?? null; }
 export function projectsForClient(clientId: string, projects: Project[]) { return projects.filter((project) => project.client_id === clientId && project.status !== 'archived'); }
+export function visibleFreelanceClients(clients: Client[]) { return clients.filter((client) => client.status !== 'archived'); }
 export function allocationPlan(sessions: WorkSession[], allocations: PaymentAllocation[], amount: number) {
   let available = Math.max(0, amount);
   return sessions.slice().sort((a, b) => a.session_date.localeCompare(b.session_date)).flatMap((session) => {

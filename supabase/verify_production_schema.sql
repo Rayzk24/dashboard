@@ -1,4 +1,4 @@
--- Read-only production verification for Rayzk Dashboard V0.9.
+-- Read-only production verification for Rayzk Dashboard through V1.2 Notes.
 -- Run each query in Supabase SQL Editor; this file does not change data or schema.
 
 -- 1. Expected runtime tables and their RLS state.
@@ -7,18 +7,18 @@ from pg_tables
 where schemaname = 'public'
   and tablename in (
     'admin_profile', 'app_settings', 'habits', 'habit_entries', 'daily_notes',
-    'clients', 'projects', 'work_sessions', 'payments', 'payment_allocations',
+    'clients', 'projects', 'work_sessions', 'payments', 'payment_allocations', 'notes',
     'tasks', 'purchases', 'reports', 'report_sessions'
   )
 order by tablename;
 
--- 2. Columns required by the V0.9 frontend.
+-- 2. Columns required by the current frontend.
 select table_name, column_name, data_type, is_nullable, column_default
 from information_schema.columns
 where table_schema = 'public'
   and table_name in (
     'app_settings', 'habits', 'habit_entries', 'daily_notes', 'clients',
-    'projects', 'work_sessions', 'payments', 'payment_allocations', 'tasks',
+    'projects', 'work_sessions', 'payments', 'payment_allocations', 'notes', 'tasks',
     'purchases', 'reports', 'report_sessions'
   )
 order by table_name, ordinal_position;
@@ -32,7 +32,7 @@ where connamespace = 'public'::regnamespace
     where relnamespace = 'public'::regnamespace
       and relname in (
         'app_settings', 'habits', 'habit_entries', 'daily_notes', 'clients',
-        'projects', 'work_sessions', 'payments', 'payment_allocations', 'tasks',
+        'projects', 'work_sessions', 'payments', 'payment_allocations', 'notes', 'tasks',
         'purchases', 'reports', 'report_sessions'
       )
   )
@@ -44,7 +44,7 @@ from pg_policies
 where schemaname = 'public'
   and tablename in (
     'admin_profile', 'app_settings', 'habits', 'habit_entries', 'daily_notes',
-    'clients', 'projects', 'work_sessions', 'payments', 'payment_allocations',
+    'clients', 'projects', 'work_sessions', 'payments', 'payment_allocations', 'notes',
     'tasks', 'purchases', 'reports', 'report_sessions'
   )
 order by tablename, policyname;
@@ -73,3 +73,35 @@ where pronamespace = 'public'::regnamespace
     'rebuild_client_payment_allocations', 'prevent_underallocated_work_session'
   )
 order by proname;
+
+-- 7. V1.2 Notes: columns, preservation FK, timestamp trigger and private policies.
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'notes'
+order by ordinal_position;
+
+select conname, pg_get_constraintdef(oid) as definition
+from pg_constraint
+where connamespace = 'public'::regnamespace
+  and conrelid = 'public.notes'::regclass
+order by conname;
+
+select trigger_name, action_timing, event_manipulation
+from information_schema.triggers
+where trigger_schema = 'public'
+  and event_object_table = 'notes'
+order by trigger_name;
+
+select policyname, roles, cmd, qual, with_check
+from pg_policies
+where schemaname = 'public'
+  and tablename = 'notes'
+order by policyname;
+
+select grantee, privilege_type
+from information_schema.role_table_grants
+where table_schema = 'public'
+  and table_name = 'notes'
+  and grantee in ('authenticated', 'anon')
+order by grantee, privilege_type;

@@ -1,96 +1,68 @@
-# Supabase — préparation de Rayzk Dashboard V0.9
+# Supabase — Rayzk Dashboard
 
-Ce guide utilise uniquement des migrations additives. Elles ne suppriment pas les anciennes tables Summer ni les données existantes. Ne modifiez pas `.env.local` depuis le SQL Editor.
+Toutes les migrations sont additives. Ne modifiez jamais une migration déjà appliquée et sauvegardez les données avant toute nouvelle étape.
 
-## Avant toute migration : sauvegarde
+## Sauvegarde préalable
 
-1. Ouvrez **Supabase > Table Editor**.
-2. Exportez ces tables au format CSV lorsqu’elles existent :
-   `admin_profile`, `app_settings`, `habits`, `habit_entries`, `daily_notes`, `clients`, `projects`, `work_sessions`, `payments`, `payment_allocations`, `tasks`, `purchases`, `reports`, `report_sessions`, `daily_entries`, `summer_goals`.
-3. Enregistrez les exports dans un dossier hors du dépôt et ne les poussez pas vers Git.
-4. Notez le compte admin existant dans **Authentication > Users**.
+Dans **Supabase > Table Editor**, exportez en CSV les tables présentes :
 
-## Schéma attendu par le frontend V0.9
+`admin_profile`, `app_settings`, `habits`, `habit_entries`, `daily_notes`, `notes`, `clients`, `projects`, `work_sessions`, `payments`, `payment_allocations`, `tasks`, `purchases`, `reports`, `report_sessions`, `daily_entries`, `summer_goals`.
 
-| Domaine | Tables runtime |
-| --- | --- |
-| Auth / profil | `admin_profile`, `app_settings` |
-| Habitudes | `habits`, `habit_entries`, `daily_notes` |
-| Freelance | `clients`, `projects`, `work_sessions`, `payments`, `payment_allocations`, `reports`, `report_sessions` |
-| Personnel / compatibilité | `purchases`, `tasks` |
+Conservez les exports hors du dépôt Git. Notez aussi le compte existant dans **Authentication > Users**.
 
-Les tables `daily_entries` et `summer_goals` peuvent rester présentes : elles ne sont plus appelées par le frontend V0.9.
+## Ordre des migrations
 
-## Ordre exact dans SQL Editor
+Dans **Supabase > SQL Editor > New query**, copiez chaque fichier complet et exécutez-les dans cet ordre :
 
-Avant chaque fichier : ouvrez **Supabase > SQL Editor > New query**, copiez le fichier complet indiqué, exécutez-le, puis passez à l’étape suivante seulement si l’exécution se termine sans erreur inattendue.
+1. `supabase/schema.sql` — bootstrap historique, uniquement si `admin_profile`, `is_admin()` et les tables Summer sont absents.
+2. `supabase/migrations/20260715_v05.sql` — tables produit initiales, index, triggers et RLS.
+3. `supabase/migrations/20260716_v051.sql` — changement de journée persistant.
+4. `supabase/migrations/20260717_v053.sql` — période effective des habitudes.
+5. `supabase/migrations/20260718_v054.sql` — titres des sessions, sans perte de description.
+6. `supabase/migrations/20260719_v09_production_stability.sql` — réglages par défaut des administrateurs.
+7. `supabase/migrations/20260720_v11_management.sql` — RPC de gestion transactionnelles.
+8. `supabase/migrations/20260722_v12_notes.sql` — Notes V1.2.
+9. `supabase/migrations/20260722_v12_notes_permissions.sql` — droit d’accès de la table au rôle authentifié.
 
-### Étape 1 — Bootstrap historique (seulement si absent)
+Pour un projet Rayzk déjà en production, les étapes 1 à 7 sont probablement appliquées. Vérifiez-les avec `supabase/verify_production_schema.sql`, puis exécutez les étapes 8 et 9 dans cet ordre.
 
-Fichier : `supabase/schema.sql`
+## Migration Notes V1.2
 
-Appliquez-le uniquement si ce projet Supabase ne possède pas encore `admin_profile`, `daily_entries`, `summer_goals`, `has_admin()` et `is_admin()`. Sur l’ancien projet Rayzk il est probablement déjà appliqué.
+`20260722_v12_notes.sql` crée uniquement :
 
-Il ajoute le premier compte administrateur via un trigger Auth et active RLS sur les tables historiques. Si une table ou un trigger existe déjà, les clauses `if not exists` / `drop ... if exists` rendent la réexécution généralement sûre. N’exécutez toutefois pas cette étape aveuglément sur un projet qui utilise un système d’admin différent.
+- la table privée `notes` ;
+- les index `user_id/updated_at` et `client_id` ;
+- le trigger `touch_notes_updated_at` réutilisant `public.touch_updated_at()` ;
+- quatre politiques RLS distinctes pour `SELECT`, `INSERT`, `UPDATE` et `DELETE` ;
+- une clé étrangère client avec `ON DELETE SET NULL`.
 
-### Étape 2 — Tables produit V0.5
+Le contenu riche est enregistré en JSONB et son texte de recherche dans `plain_text`. `client_name_snapshot` conserve le nom d’un ancien client. Une suppression de client ne supprime donc jamais ses notes.
 
-Fichier : `supabase/migrations/20260715_v05.sql`
+Les politiques vérifient `user_id = auth.uid()`, le compte administrateur et, lorsqu’un client est choisi, que ce client appartient au même utilisateur. Aucune note n’est accessible sans authentification.
 
-À appliquer si les tables `app_settings`, `habits`, `clients`, `projects` et `work_sessions` n’existent pas encore. Ce fichier ajoute les tables V0.5, les index, les triggers de date, RLS et une migration non destructive depuis les tables Summer. Il ne supprime pas les anciennes tables.
+`20260722_v12_notes_permissions.sql` accorde explicitement `SELECT`, `INSERT`, `UPDATE` et `DELETE` au rôle `authenticated`. Les politiques RLS ci-dessus continuent de limiter chaque opération aux notes du propriétaire. Le rôle `anon` ne reçoit aucun accès à la table.
 
-### Étape 3 — Changement de journée persistant
+## Vérification après migration
 
-Fichier : `supabase/migrations/20260716_v051.sql`
+1. Exécutez `supabase/verify_production_schema.sql` dans une nouvelle requête.
+2. Vérifiez que `notes` apparaît avec `rowsecurity = true`.
+3. Vérifiez les colonnes `content jsonb`, `plain_text`, `client_name_snapshot`, `created_at` et `updated_at`.
+4. Vérifiez que la contrainte de `client_id` indique `ON DELETE SET NULL`.
+5. Vérifiez le trigger `touch_notes_updated_at`.
+6. Vérifiez les quatre politiques `notes ... own` destinées à `authenticated`.
+7. Vérifiez que `authenticated` possède les quatre privilèges de table et que `anon` n’en possède aucun.
 
-À appliquer si `app_settings.day_rollover_hour` est absent. Il ajoute cette colonne, avec la valeur par défaut `5`.
+## Test manuel avant push
 
-### Étape 4 — Période effective des habitudes
+Avec le compte connecté :
 
-Fichier : `supabase/migrations/20260717_v053.sql`
+1. créez une note globale ;
+2. créez une note liée à un client ;
+3. écrivez du texte, une checklist, du code et plusieurs couleurs HEX ;
+4. attendez l’état `Enregistré`, puis actualisez ;
+5. recherchez et filtrez la note ;
+6. déplacez-la vers un autre client puis vers Global ;
+7. supprimez uniquement une note temporaire ;
+8. confirmez qu’un utilisateur non authentifié ne peut lire aucune note.
 
-À appliquer si `habits.starts_on` ou `habits.ends_on` est absent. Il complète les lignes existantes sans les effacer et ajoute le trigger d’archivage.
-
-### Étape 5 — Titres des sessions
-
-Fichier : `supabase/migrations/20260718_v054.sql`
-
-À appliquer si `work_sessions.title` est absent. Les titres des anciennes sessions sont dérivés de la première ligne de la description ou d’un libellé neutre. La description publique est conservée intégralement.
-
-### Étape 6 — Stabilité V0.9
-
-Fichier : `supabase/migrations/20260719_v09_production_stability.sql`
-
-Appliquez toujours ce fichier après les étapes précédentes. Il ajoute uniquement un trigger qui crée les réglages par défaut pour un futur premier administrateur et remplit les réglages manquants des administrateurs existants. Il n’écrase aucune ligne `app_settings` existante.
-
-### Étape 7 — Gestion et historique V1.1
-
-Fichier : `supabase/migrations/20260720_v11_management.sql`
-
-Appliquez ce fichier après V0.9 et avant de déployer/merger V1.1. Il ajoute des RPC sécurisées pour supprimer une habitude, supprimer une mission sans supprimer ses sessions, créer/modifier/supprimer un règlement avec reconstruction déterministe des allocations, et supprimer une session sans supprimer les règlements. Il ajoute aussi une protection de base empêchant de réduire une session sous le montant déjà attribué.
-
-Après exécution, créez des données temporaires pour vérifier : une habitude avec validation, une mission avec session, deux sessions facturables et deux règlements. Testez chaque suppression, puis contrôlez que les règlements sont conservés et que le solde non attribué est correct. Vous pouvez ensuite supprimer uniquement ces données temporaires depuis l’interface.
-
-## Vérifier le résultat
-
-1. Ouvrez une nouvelle requête SQL.
-2. Copiez le contenu complet de `supabase/verify_production_schema.sql`.
-3. Exécutez les requêtes sans les modifier.
-4. Vérifiez que chaque table runtime apparaît avec `rowsecurity = true`.
-5. Vérifiez que `work_sessions.title` est non nullable, et que les politiques des tables runtime s’adressent au rôle `authenticated` avec la vérification de propriétaire.
-6. Vérifiez la présence du trigger `ensure_app_settings_for_admin_on_profile`.
-7. Vérifiez également les fonctions `delete_habit_with_history`, `delete_project_keep_sessions`, `create_payment_and_rebuild_allocations`, `update_payment_and_rebuild_allocations`, `delete_payment_and_rebuild_allocations` et `delete_work_session_and_rebuild_allocations`.
-
-Les messages indiquant qu’un index, une table ou une colonne existe déjà sont normaux uniquement si vous savez qu’une migration a déjà été appliquée. En cas de doute, arrêtez-vous, lancez d’abord le fichier de vérification et comparez le résultat à ce guide.
-
-## RLS et sécurité attendues
-
-La migration V0.5 active RLS sur toutes les tables runtime. Les politiques `owner access` limitent la lecture, l’insertion, la mise à jour et la suppression aux utilisateurs authentifiés qui sont aussi l’administrateur, avec `user_id = auth.uid()`.
-
-`admin_profile` est créé par le trigger Auth sécurisé. L’inscription n’est pas une fonctionnalité publique : dans **Authentication > Providers > Email**, désactivez les inscriptions publiques après la création/vérification du compte personnel si elles ne sont pas nécessaires. Dans **Authentication > URL Configuration**, ajoutez l’URL locale et l’URL Cloudflare Pages autorisées.
-
-N’utilisez jamais `service_role`, une clé `sb_secret_*`, le JWT secret ou un mot de passe de base dans le frontend.
-
-## Test après migration
-
-Avec les deux variables frontend configurées, connectez-vous avec le compte admin existant. Vérifiez au minimum : chargement des habitudes, validation, ajout d’un client, mission, session, règlement, achat, réglages puis actualisation. Une erreur RLS doit rester visible dans l’interface ; elle ne doit jamais être contournée par une clé serveur dans le navigateur.
+N’utilisez jamais de clé `service_role`, de clé `sb_secret_*`, de JWT secret ou de mot de passe de base dans le frontend.

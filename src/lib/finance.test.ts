@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocationTotal, canSetSessionAmount, clientSummary, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialSummary, inheritedRate, paymentBreakdown, remainingForSession, sessionAmounts } from './finance';
+import { allocationTotal, canSetSessionAmount, clientSummary, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialSummary, inheritedRate, paymentBreakdown, remainingForSession, sessionAmounts, visibleFreelanceClients } from './finance';
 import { buildPublicReport } from './report';
 import type { Client, Payment, PaymentAllocation, WorkSession } from '../types/domain';
 
@@ -7,6 +7,10 @@ const client = { id: 'c1', user_id: 'u1', name: 'Client', contact: null, email: 
 const session = { id: 's1', user_id: 'u1', client_id: 'c1', project_id: null, title: 'Configuration', session_date: '2026-07-15', started_at: null, ended_at: null, duration_minutes: 120, is_running: false, public_description: 'Configuration publique\navec détail', private_notes: 'Ne jamais exporter', hourly_rate: 15, commission_rate: 20, time_category: 'billable', gross_amount: 30, commission_amount: 6, net_amount: 24, created_at: '' } as WorkSession;
 
 describe('règles freelance', () => {
+  it('exclut les clients archivés des sélecteurs Freelance et Notes', () => {
+    const archived = { ...client, id: 'archived', name: 'Ancien client', status: 'archived' as const };
+    expect(visibleFreelanceClients([client, archived]).map((item) => item.id)).toEqual(['c1']);
+  });
   it('calcule durée, priorité de tarif et commission', () => { expect(durationMinutes('2026-07-15T10:00:00Z', '2026-07-15T11:30:00Z')).toBe(90); expect(inheritedRate(20, { hourly_rate: 18 }, { hourly_rate: 15 }, 12)).toBe(20); expect(sessionAmounts(300, 12, 20)).toEqual({ gross: 60, commission: 12, net: 48 }); });
   it('centralise travail valorisé, reçu, attribué et à recevoir', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 10 }] as PaymentAllocation[]; const payment = paymentOf('p1', 10, '2026-07-15'); expect(allocationTotal('s1', allocations)).toBe(10); expect(remainingForSession(session, allocations)).toBe(20); expect(clientSummary('c1', [session], [payment], allocations)).toMatchObject({ generated: 30, received: 10, covered: 10, remaining: 20 }); expect(financialSummary([session], [payment], allocations)).toMatchObject({ valued: 30, received: 10, allocated: 10, remaining: 20 }); });
   it('protège une session déjà attribuée et expose le montant non attribué', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 12 }] as PaymentAllocation[]; const payment = paymentOf('p1', 20, '2026-07-15'); expect(canSetSessionAmount(11, allocationTotal('s1', allocations))).toBe(false); expect(canSetSessionAmount(12, allocationTotal('s1', allocations))).toBe(true); expect(paymentBreakdown(payment, allocations)).toEqual({ allocated: 12, unallocated: 8 }); });

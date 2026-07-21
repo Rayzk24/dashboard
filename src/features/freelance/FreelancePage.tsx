@@ -9,6 +9,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppData } from "../../app/AppDataProvider";
 import { AppSelect } from "../../components/ui/AppSelect";
 import {
@@ -24,8 +25,10 @@ import {
   financialSummary,
   projectsForClient,
   sessionPaymentState,
+  visibleFreelanceClients,
 } from "../../lib/finance";
 import { euro, minutesLabel } from "../../lib/format";
+import { noteDisplayTitle } from "../../lib/notes";
 import {
   missionCardClassName,
   missionStatusPresentation,
@@ -70,9 +73,7 @@ export function FreelancePage() {
     scoped.payments,
     data.allocations,
   );
-  const visibleClients = data.clients.filter(
-    (item) => item.status !== "archived",
-  );
+  const visibleClients = visibleFreelanceClients(data.clients);
   const selectClient = (id: string) => {
     setClientId(id);
     setMissionId(null);
@@ -267,6 +268,7 @@ function ClientWorkspace({
   setMissionId: (id: string | null) => void;
 }) {
   const data = useAppData();
+  const navigate = useNavigate();
   const scoped = financialDataForPeriod(
     data.sessions.filter((item) => item.client_id === client.id),
     data.payments.filter((item) => item.client_id === client.id),
@@ -383,6 +385,12 @@ function ClientWorkspace({
           <Empty>Les petites interventions peuvent rester sans mission.</Empty>
         )}
       </section>
+      <ClientNotes
+        client={client}
+        onOpen={(noteId) => navigate(`/notes/${noteId}`)}
+        onCreate={() => navigate(`/notes?newClient=${client.id}`)}
+        onViewAll={() => navigate(`/notes?client=${client.id}`)}
+      />
       <PaymentHistory client={client} />
       <div className="workspace-footer-actions">
         <button className="button subtle" onClick={() => onModal("payment")}>
@@ -396,6 +404,63 @@ function ClientWorkspace({
         </button>
       </div>
     </>
+  );
+}
+
+function ClientNotes({
+  client,
+  onOpen,
+  onCreate,
+  onViewAll,
+}: {
+  client: Client;
+  onOpen: (noteId: string) => void;
+  onCreate: () => void;
+  onViewAll: () => void;
+}) {
+  const { notes } = useAppData();
+  const recent = notes
+    .filter((note) => note.client_id === client.id)
+    .slice()
+    .sort(
+      (a, b) =>
+        b.updated_at.localeCompare(a.updated_at) ||
+        b.created_at.localeCompare(a.created_at),
+    )
+    .slice(0, 3);
+  return (
+    <section className="workspace-section client-notes-section">
+      <header>
+        <div>
+          <p className="eyebrow">Brouillons</p>
+          <h3>Notes</h3>
+        </div>
+        <div className="client-note-actions">
+          <button className="text-link" onClick={onCreate}>Nouvelle note</button>
+          <button className="text-link" onClick={onViewAll}>Voir toutes les notes</button>
+        </div>
+      </header>
+      {recent.length ? (
+        <div className="client-note-list">
+          {recent.map((note) => (
+            <button key={note.id} onClick={() => onOpen(note.id)}>
+              <span>
+                <b>{noteDisplayTitle(note)}</b>
+                <small>
+                  {new Intl.DateTimeFormat('fr-FR', {
+                    day: '2-digit',
+                    month: 'short',
+                  }).format(new Date(note.updated_at))}
+                </small>
+              </span>
+              <ChevronRight size={16} />
+            </button>
+          ))}
+        </div>
+      ) : (
+        <Empty>Aucune note pour ce client.</Empty>
+      )}
+    </section>
   );
 }
 

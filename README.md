@@ -1,11 +1,11 @@
-# Rayzk Dashboard V0.9
+# Rayzk Dashboard
 
-Dashboard personnel privé pour les habitudes, le suivi freelance et les achats. La version V0.9 utilise exclusivement Supabase au runtime et le thème final Bleu minuit raffiné.
+Dashboard personnel privé basé sur React, Vite et Supabase, avec la direction artistique Apple Dark Glass.
 
 ## Prérequis
 
-- Node.js `22.12.0` ou plus récent dans la branche 22 (voir `.nvmrc`).
-- Un projet Supabase configuré selon [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
+- Node.js `22.12.0` ou une version 22 plus récente compatible.
+- Un projet Supabase préparé selon [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
 
 ## Installation locale
 
@@ -15,14 +15,14 @@ Copy-Item .env.example .env.local
 npm run dev
 ```
 
-Renseignez uniquement ces deux variables dans `.env.local` :
+Variables locales attendues :
 
 ```env
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 ```
 
-La clé anonyme/publishable est une clé frontend. Elle ne remplace pas Supabase Auth et les politiques RLS. Ne mettez jamais une clé `service_role`, une clé secrète ou un mot de passe de base dans une variable `VITE_*`.
+N’utilisez jamais de clé `service_role`, de clé `sb_secret_*` ou de secret serveur dans une variable `VITE_*`.
 
 ## Commandes
 
@@ -33,32 +33,25 @@ npm run build
 npm run preview
 ```
 
-Le build Vite est créé dans `dist`. `public/_redirects` et `public/_headers` sont copiés dans ce dossier.
-
 ## Architecture
 
-- `src/app` : session Supabase, routage et état de données partagé.
-- `src/services/data.ts` : unique repository frontend Supabase.
-- `src/features` : les quatre espaces produit (Accueil, Habitudes, Freelance, Personnel) et Réglages.
-- `supabase/schema.sql` : bootstrap Auth/admin historique.
-- `supabase/migrations` : évolutions additives et versionnées du schéma produit.
+- `src/app` : session Supabase, routage et état partagé.
+- `src/services` : accès Supabase centralisé, dont le repository typé des notes.
+- `src/features` : Accueil, Habitudes, Freelance, Notes, Personnel et Réglages.
+- `src/features/notes` : page Notes, éditeur Tiptap et aperçu des couleurs HEX.
+- `src/lib` : règles métier pures et autosave sérialisé.
+- `supabase/migrations` : migrations additives et versionnées.
 
-## Fonctionnalités présentes
+## Fonctionnalités
 
-- Connexion Supabase mono-administrateur, persistance de session et déconnexion.
-- Habitudes : création, modification, archivage, validation, vues semaine/mois et statistiques.
-- Freelance : clients, missions, sessions titrées, tarifs hérités, commissions, règlements, allocations et rapport PDF existant.
-- Personnel : ajout, modification, changement de statut et suppression des achats.
-- Réglages persistants : nom, site, tarif global, changement de jour et export JSON.
+- Authentification Supabase privée et réglages persistants.
+- Habitudes hebdomadaires, calendrier et statistiques.
+- Clients, missions, sessions, règlements, allocations et rapports PDF.
+- Notes globales ou liées à un client, recherche, filtres, éditeur riche léger, autosave et aperçu HEX.
+- Achats personnels avec filtres et statuts.
 
-## Fonctionnalités prévues pour V1.1
+## Notes V1.2
 
-- Détail et modification complets d’une session.
-- Suppression définitive des habitudes, missions et sessions.
-- Historique, modification et suppression avancés des règlements.
+Les migrations `supabase/migrations/20260722_v12_notes.sql` puis `supabase/migrations/20260722_v12_notes_permissions.sql` doivent être appliquées avant de lancer une version contenant l’onglet Notes. Elles créent la table privée, ses index, son trigger `updated_at`, ses politiques RLS et les droits du rôle `authenticated`. Les notes client sont conservées lors d’une suppression de client grâce à `ON DELETE SET NULL` et `client_name_snapshot`.
 
-Ces actions ne sont pas présentées comme disponibles dans l’interface V0.9.
-
-## Déploiement
-
-Suivez [DEPLOYMENT.md](DEPLOYMENT.md) pour les étapes Supabase et Cloudflare Pages. Aucune donnée de démonstration ni route de laboratoire ne fait partie du produit V0.9.
+Suivez [DEPLOYMENT.md](DEPLOYMENT.md) avant tout push de cette version.

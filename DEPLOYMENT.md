@@ -1,62 +1,68 @@
-# Déploiement Cloudflare Pages — Rayzk Dashboard V0.9
+# Déploiement Cloudflare Pages — Rayzk Dashboard
 
-Suivez les étapes dans cet ordre. Ne placez jamais une clé serveur Supabase dans Cloudflare Pages ni dans le dépôt.
+## 1. Sauvegarder Supabase
 
-## 1. Sauvegarder puis préparer Supabase
+Exportez les tables listées dans [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y compris `notes` si elle existe déjà. Conservez les CSV hors du dépôt.
 
-1. Dans Supabase, ouvrez **Table Editor**.
-2. Exportez en CSV les tables utilisées : `app_settings`, `habits`, `habit_entries`, `daily_notes`, `clients`, `projects`, `work_sessions`, `payments`, `payment_allocations`, `tasks`, `purchases`, `reports`, `report_sessions` et `admin_profile`.
-3. Conservez les exports hors du dépôt Git.
-4. Suivez les instructions pas à pas de [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y compris `20260720_v11_management.sql` avant toute fusion V1.1.
-5. Dans SQL Editor, exécutez `supabase/verify_production_schema.sql` et vérifiez le résultat avant le déploiement.
+## 2. Appliquer Notes V1.2
 
-## 2. Variables Cloudflare Pages
+1. Vérifiez que les migrations jusqu’à `20260720_v11_management.sql` sont déjà présentes.
+2. Dans SQL Editor, copiez puis exécutez `supabase/migrations/20260722_v12_notes.sql`.
+3. Exécutez ensuite `supabase/migrations/20260722_v12_notes_permissions.sql`.
+4. Exécutez `supabase/verify_production_schema.sql`.
+5. Vérifiez la table, ses privilèges, le trigger, `ON DELETE SET NULL` et les quatre politiques RLS.
+6. Effectuez le test manuel Notes décrit dans `SUPABASE_SETUP.md` avant tout push.
 
-Ajoutez les variables dans **Settings > Environment variables** pour **Production** et **Preview**. La clé anonyme est une valeur frontend et doit rester protégée par Auth/RLS ; ne l’enregistrez pas comme secret serveur.
+## 3. Variables Cloudflare Pages
 
-| Nom | Action | Type Cloudflare | Environnement | Valeur |
-| --- | --- | --- | --- | --- |
-| `VITE_SUPABASE_URL` | CONSERVER | Plaintext | Production + Preview | URL du projet Supabase |
-| `VITE_SUPABASE_ANON_KEY` | CONSERVER | Plaintext | Production + Preview | Clé anon/publishable du même projet Supabase |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | SUPPRIMER | — | Production + Preview | Non lue par ce dépôt V0.9 |
-| `VITE_DAY_ROLLOVER_HOUR` | SUPPRIMER | — | Production + Preview | Le changement de jour est stocké dans `app_settings` (secours interne : 5) |
-| `VITE_SUMMER_START` | SUPPRIMER | — | Production + Preview | Ancien dashboard Summer retiré du runtime |
-| `VITE_SUMMER_END` | SUPPRIMER | — | Production + Preview | Ancien dashboard Summer retiré du runtime |
-| `VITE_ENABLE_INTERNAL_LABS` | SUPPRIMER | — | Production + Preview | Laboratoires retirés du produit |
+| Nom | Action | Environnement | Valeur |
+| --- | --- | --- | --- |
+| `VITE_SUPABASE_URL` | Conserver | Production + Preview | URL du projet Supabase |
+| `VITE_SUPABASE_ANON_KEY` | Conserver | Production + Preview | Clé anon/publishable du même projet |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supprimer si présente | Production + Preview | Non lue par ce dépôt |
+| `VITE_DAY_ROLLOVER_HOUR` | Supprimer | Production + Preview | Valeur stockée dans `app_settings` |
+| `VITE_SUMMER_START` | Supprimer | Production + Preview | Ancien dashboard retiré |
+| `VITE_SUMMER_END` | Supprimer | Production + Preview | Ancien dashboard retiré |
+| `VITE_ENABLE_INTERNAL_LABS` | Supprimer | Production + Preview | Laboratoires retirés |
 
-Ne créez pas de variable `VITE_*` pour `service_role`, `sb_secret_*`, JWT secret ou mot de passe de base.
+Ne placez jamais de secret serveur dans une variable `VITE_*`.
 
-## 3. Configuration Cloudflare Pages
+## 4. Configuration Cloudflare Pages
 
 | Réglage | Valeur |
 | --- | --- |
-| Framework preset | React (Vite), ou Vite selon l’interface Cloudflare |
+| Framework preset | React (Vite) ou Vite |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Root directory | `/` |
-| Node.js | `22.12.0` ou une version 22 plus récente compatible |
-| Production branch | Votre branche principale (souvent `main`) |
+| Node.js | `22.12.0` ou version 22 compatible plus récente |
+| Production branch | `main` |
 
-`public/_redirects` contient le fallback SPA et `public/_headers` règle le cache des assets hashés. Ils sont copiés dans `dist` par Vite.
+`public/_redirects` assure le fallback SPA, notamment pour `/notes/:noteId`.
 
-## 4. Push et déploiement
+## 5. Vérifications avant push
 
-1. Exécutez localement `npm run typecheck`, `npm run test` et `npm run build`.
-2. Vérifiez `git status` et assurez-vous que `.env.local`, les exports CSV et `dist` n’apparaissent pas.
-3. Poussez votre branche vers GitHub.
-4. Attendez le build Cloudflare Pages, puis ouvrez l’URL de production.
-5. Testez la checklist ci-dessous.
+```bash
+npm run typecheck
+npm run test
+npm run build
+git status
+```
 
-Pour revenir en arrière, redéployez le déploiement Cloudflare précédent. Ne restaurez Supabase qu’à partir de la sauvegarde si une migration a réellement échoué ou produit un résultat inattendu. Avant la fusion V1.1, testez la migration avec des données temporaires dans SQL Editor puis dans la branche de prévisualisation.
+Vérifiez que `.env.local`, `dist`, les exports CSV et les données personnelles ne sont pas inclus.
 
-## 5. Checklist après déploiement
+## 6. Checklist après déploiement
 
-- [ ] Ouvrir le site, se connecter et actualiser la page : la session persiste.
-- [ ] Vérifier Accueil et valider une habitude.
-- [ ] Créer/modifier un client, une mission et une session.
-- [ ] Enregistrer un règlement existant et vérifier les montants.
-- [ ] Créer/modifier un achat et changer son statut.
-- [ ] Modifier les réglages puis actualiser la page.
-- [ ] Ouvrir directement `/habits`, `/freelance`, `/personnel` et `/settings` : aucune 404.
-- [ ] Se déconnecter puis vérifier que l’accès revient à la connexion.
-- [ ] Vérifier l’affichage mobile.
+- [ ] Connexion, actualisation et navigation existante.
+- [ ] Habitudes, Freelance, Personnel et Réglages inchangés.
+- [ ] Ouverture directe de `/notes` et `/notes/:noteId` sans 404.
+- [ ] Création d’une note globale et d’une note client.
+- [ ] Autosave jusqu’à `Enregistré`, puis actualisation.
+- [ ] Titres, listes, checklist, liens, code inline et bloc de code.
+- [ ] Aperçus de `#FFF`, `#0A84FF` et `#FFFFFF80`.
+- [ ] Recherche, filtres et déplacement Global/client.
+- [ ] Création depuis la fiche client et retour vers l’onglet Notes.
+- [ ] Suppression d’une note temporaire.
+- [ ] Navigation mobile à cinq onglets sur 375, 390 et 430 px.
+
+En cas de problème frontend, redéployez le déploiement Cloudflare précédent. La migration Notes est additive ; ne supprimez la table ou des données qu’après sauvegarde et analyse explicite.

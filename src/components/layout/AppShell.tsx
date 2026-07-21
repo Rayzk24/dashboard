@@ -2,6 +2,7 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  NotebookPen,
   Settings,
   UserRound,
   Users,
@@ -15,6 +16,7 @@ const navigation = [
   { to: '/', label: 'Accueil', icon: LayoutDashboard },
   { to: '/habits', label: 'Habitudes', icon: ListChecks },
   { to: '/freelance', label: 'Freelance', icon: Users },
+  { to: '/notes', label: 'Notes', icon: NotebookPen },
   { to: '/personnel', label: 'Personnel', icon: UserRound },
 ];
 
