@@ -375,11 +375,19 @@ function HabitForm({ habit, onClose }: { habit?: Habit; onClose: () => void }) {
         </label>
         {frequency === "weekly_days" && (
           <div className="weekday-picker">
-            {["D", "L", "M", "M", "J", "V", "S"].map((label, index) => (
+            {[
+              { label: "L", value: 1 },
+              { label: "M", value: 2 },
+              { label: "M", value: 3 },
+              { label: "J", value: 4 },
+              { label: "V", value: 5 },
+              { label: "S", value: 6 },
+              { label: "D", value: 0 },
+            ].map(({ label, value }) => (
               <button
-                className={days.includes(index) ? "selected" : ""}
-                key={`${label}${index}`}
-                onClick={() => toggle(index)}
+                className={days.includes(value) ? "selected" : ""}
+                key={value}
+                onClick={() => toggle(value)}
               >
                 {label}
               </button>
