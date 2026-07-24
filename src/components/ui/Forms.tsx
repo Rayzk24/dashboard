@@ -1,4 +1,10 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useAppData } from "../../app/AppDataProvider";
 import {
   allocationTotal,
@@ -232,8 +238,12 @@ export function SessionForm({
   );
   const [error, setError] = useState<string | null>(null);
   const client = clients.find((item) => item.id === clientId);
-  const options = projects.filter(
-    (item) => item.client_id === clientId && item.status !== "archived",
+  const options = useMemo(
+    () =>
+      projects.filter(
+        (item) => item.client_id === clientId && item.status !== "archived",
+      ),
+    [clientId, projects],
   );
   const project = options.find((item) => item.id === projectId);
   useEffect(() => {
