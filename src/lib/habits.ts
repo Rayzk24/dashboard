@@ -23,6 +23,7 @@ export function weekDates(key: string) {
 export function habitScheduled(habit: Habit, key: string) {
   if (key < habit.starts_on || (habit.ends_on && key > habit.ends_on))
     return false;
+  if (habit.archived_at && key >= habit.archived_at.slice(0, 10)) return false;
   if (habit.frequency === "daily") return true;
   return habit.week_days.includes(parseKey(key).getDay());
 }

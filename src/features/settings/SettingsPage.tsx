@@ -9,7 +9,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAppData } from "../../app/AppDataProvider";
 import { AppSelect } from "../../components/ui/AppSelect";
 import { PasswordChangeModal } from "./PasswordChangeModal";
@@ -26,6 +26,16 @@ export function SettingsPage({ onSignOut }: { onSignOut: () => void }) {
   );
   const [passwordModal, setPasswordModal] = useState(false);
   const [accountNotice, setAccountNotice] = useState<string | null>(null);
+  const settingsInitialized = useRef(false);
+
+  useEffect(() => {
+    if (!data.settings || settingsInitialized.current) return;
+    setName(data.settings.display_name || "Rayzk");
+    setSite(data.settings.public_site || "rayzk.fr");
+    setRate(String(data.settings.default_hourly_rate || 12));
+    setRollover(String(data.settings.day_rollover_hour ?? 5));
+    settingsInitialized.current = true;
+  }, [data.settings]);
 
   const save = () =>
     void data.update("app_settings", data.userId, {

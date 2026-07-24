@@ -132,7 +132,7 @@ describe("jour logique et habitudes", () => {
       ),
     ).toBeUndefined();
   });
-  it("ne compte pas une habitude avant son début ni après son archivage", () => {
+  it("ne compte pas une habitude avant son début ni après sa fin", () => {
     const future = {
       ...habit("new"),
       starts_on: "2026-07-15",
@@ -142,6 +142,17 @@ describe("jour logique et habitudes", () => {
     expect(habitScheduled(future, "2026-07-15")).toBe(true);
     expect(habitScheduled(future, "2026-07-21")).toBe(false);
     expect(completion([future], [], "2026-07-14").scheduled).toBe(0);
+  });
+  it("préserve l’historique d’une habitude archivée sans la compter ensuite", () => {
+    const archived = {
+      ...habit("archived"),
+      archived_at: "2026-07-15T18:00:00.000Z",
+      is_active: false,
+    };
+    expect(habitScheduled(archived, "2026-07-14")).toBe(true);
+    expect(habitScheduled(archived, "2026-07-15")).toBe(false);
+    expect(habitScheduled(archived, "2026-07-16")).toBe(false);
+    expect(completion([archived], [], "2026-07-16").scheduled).toBe(0);
   });
 });
 describe("missions et paiements", () => {

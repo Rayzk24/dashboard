@@ -86,7 +86,7 @@ export function HabitsPage() {
             className="weekly-grid"
             style={{
               gridTemplateColumns:
-                "minmax(132px,1.4fr) repeat(7,minmax(48px,1fr)",
+                "minmax(132px,1.4fr) repeat(7,minmax(48px,1fr))",
             }}
           >
             <div className="weekly-corner">Habitude</div>
