@@ -32,6 +32,7 @@ import {
   noteClientSnapshot,
   noteDisplayTitle,
   noteExcerpt,
+  noteFilterPreference,
   type NoteFilter,
 } from '../../lib/notes';
 import { emptyNoteDocument, type UpdateNoteInput } from '../../services/notes';
@@ -47,17 +48,33 @@ export function NotesPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<NoteFilter>('all');
+  const filterStorageKey = `rayzk.notes.filter.${data.userId}`;
+  const [filter, setFilter] = useState<NoteFilter>(() => {
+    try {
+      return noteFilterPreference(window.localStorage.getItem(filterStorageKey));
+    } catch {
+      return 'all';
+    }
+  });
   const [creationOpen, setCreationOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const flushRef = useRef<(() => Promise<boolean>) | null>(null);
   const automaticCreation = useRef<string | null>(null);
   const clientFilter = searchParams.get('client');
+  const activeFilter: NoteFilter = clientFilter ? 'clients' : filter;
   const selected = noteId ? data.notes.find((note) => note.id === noteId) : undefined;
   const visibleNotes = useMemo(
-    () => filterNotes(data.notes, data.clients, filter, query, clientFilter),
-    [clientFilter, data.clients, data.notes, filter, query],
+    () => filterNotes(data.notes, data.clients, activeFilter, query, clientFilter),
+    [activeFilter, clientFilter, data.clients, data.notes, query],
   );
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(filterStorageKey, filter);
+    } catch {
+      /* Le filtre reste utilisable pour la session si le stockage est indisponible. */
+    }
+  }, [filter, filterStorageKey]);
 
   const create = async (clientId: string | null) => {
     setCreating(true);
@@ -113,6 +130,11 @@ export function NotesPage() {
     setSearchParams(next, { replace: true });
   };
 
+  const selectFilter = (value: NoteFilter) => {
+    if (clientFilter) clearClientFilter();
+    setFilter(value);
+  };
+
   return (
     <section className={`page notes-page ${selected ? 'note-open' : ''}`}>
       <div className="notes-layout">
@@ -146,8 +168,8 @@ export function NotesPage() {
             ] as const).map(([value, label]) => (
               <button
                 type="button"
-                className={filter === value ? 'selected' : ''}
-                onClick={() => setFilter(value)}
+                className={activeFilter === value ? 'selected' : ''}
+                onClick={() => selectFilter(value)}
                 key={value}
               >
                 {label}

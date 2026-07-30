@@ -385,6 +385,12 @@ textarea:focus-visible {
 .priority-dot.urgent {
   background: var(--brick);
 }
+.priority-dot.useful {
+  background: var(--amber);
+}
+.priority-dot.not_urgent {
+  background: #527ca2;
+}
 .priority-dot.normal {
   background: var(--amber);
 }

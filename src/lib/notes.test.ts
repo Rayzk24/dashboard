@@ -5,6 +5,7 @@ import {
   noteClientSnapshot,
   noteDisplayTitle,
   noteExcerpt,
+  noteFilterPreference,
   sortNotes,
 } from './notes';
 import type { Client, Note } from '../types/domain';
@@ -24,6 +25,13 @@ const note = (values: Partial<Note>): Note => ({
 });
 
 describe('notes', () => {
+  it('restaure uniquement un filtre de notes valide', () => {
+    expect(noteFilterPreference('global')).toBe('global');
+    expect(noteFilterPreference('clients')).toBe('clients');
+    expect(noteFilterPreference('inconnu')).toBe('all');
+    expect(noteFilterPreference(null)).toBe('all');
+  });
+
   it('trie par modification puis création décroissantes', () => {
     const sorted = sortNotes([
       note({ id: 'old', updated_at: '2026-07-20T10:00:00Z' }),

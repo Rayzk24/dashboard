@@ -7,6 +7,9 @@ import { Empty, Modal } from "../../components/ui/Modal";
 import { euro, numberOrNull } from "../../lib/format";
 import {
   filterAndSortPurchases,
+  purchaseCategoryOptions,
+  purchaseFilterLabels,
+  purchaseStatusOptions,
   type PurchaseFilter,
 } from "../../lib/purchases";
 import type { Purchase } from "../../types/domain";
@@ -38,7 +41,7 @@ export function PersonalPage() {
         <header className="section-title purchases-header">
           <div>
             <p className="eyebrow">Liste d’achats</p>
-            <h2>{euro(planned)} prévus</h2>
+            <h2>{euro(planned)} à acheter</h2>
           </div>
           <div className="filter-tabs purchase-filter-tabs">
             {(["all", "planned", "considering"] as const).map((item) => (
@@ -47,11 +50,7 @@ export function PersonalPage() {
                 className={filter === item ? "selected" : ""}
                 onClick={() => setFilter(item)}
               >
-                {item === "all"
-                  ? "Tout"
-                  : item === "planned"
-                    ? "Prévus"
-                    : "Envisagés"}
+                {purchaseFilterLabels[item]}
               </button>
             ))}
           </div>
@@ -62,7 +61,7 @@ export function PersonalPage() {
               <article className="purchase-row" key={item.id}>
                 <div>
                   <span
-                    className={`priority-dot ${item.priority === "not_urgent" ? "normal" : item.priority}`}
+                    className={`priority-dot ${item.priority}`}
                   />
                   <b>{item.name}</b>
                   <small>
@@ -93,12 +92,7 @@ export function PersonalPage() {
                             : null,
                       })
                     }
-                    options={[
-                      { value: "considering", label: "Envisagé" },
-                      { value: "planned", label: "Prévu" },
-                      { value: "bought", label: "Acheté" },
-                      { value: "abandoned", label: "Abandonné" },
-                    ]}
+                    options={purchaseStatusOptions}
                   />
                   <button
                     className="icon-button"
@@ -207,9 +201,11 @@ function PurchaseEdit({
       </label>
       <label className="field">
         <span>Catégorie</span>
-        <input
+        <AppSelect
+          ariaLabel="Catégorie de l’achat"
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={setCategory}
+          options={purchaseCategoryOptions(category)}
         />
       </label>
       <div className="field-row">
@@ -252,12 +248,7 @@ function PurchaseEdit({
           onChange={(value) =>
             setStatus(value as Purchase["status"])
           }
-          options={[
-            { value: "considering", label: "Envisagé" },
-            { value: "planned", label: "Prévu" },
-            { value: "bought", label: "Acheté" },
-            { value: "abandoned", label: "Abandonné" },
-          ]}
+          options={purchaseStatusOptions}
         />
       </label>
       <label className="field">

@@ -2,6 +2,10 @@ import type { Client, Note } from '../types/domain';
 
 export type NoteFilter = 'all' | 'global' | 'clients';
 
+export function noteFilterPreference(value: string | null): NoteFilter {
+  return value === 'global' || value === 'clients' || value === 'all' ? value : 'all';
+}
+
 export function sortNotes(notes: Note[]) {
   return notes.slice().sort(
     (a, b) =>

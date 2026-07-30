@@ -25,6 +25,7 @@ import {
   projectStatusFromControl,
   projectStatusOptions,
 } from "../../lib/missionPresentation";
+import { purchaseCategoryOptions } from "../../lib/purchases";
 import type {
   Client,
   Project,
@@ -681,9 +682,11 @@ export function PurchaseForm({ onDone }: { onDone?: () => void }) {
         />
       </Field>
       <Field label="Catégorie">
-        <input
+        <AppSelect
+          ariaLabel="Catégorie de l’achat"
           value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          onChange={setCategory}
+          options={purchaseCategoryOptions(category)}
         />
       </Field>
       <div className="field-row">

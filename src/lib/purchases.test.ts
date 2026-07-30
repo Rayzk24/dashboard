@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Purchase } from "../types/domain";
-import { filterAndSortPurchases } from "./purchases";
+import {
+  filterAndSortPurchases,
+  purchaseCategoryOptions,
+  purchaseFilterLabels,
+  purchaseStatusOptions,
+} from "./purchases";
 
 function purchase(
   id: string,
@@ -32,6 +37,32 @@ const purchases = [
 ];
 
 describe("filtre et ordre des achats", () => {
+  it("utilise des libellés de statut plus explicites", () => {
+    expect(purchaseStatusOptions.map((item) => item.label)).toEqual([
+      "À décider",
+      "À acheter",
+      "Acheté",
+      "Abandonné",
+    ]);
+    expect(purchaseFilterLabels).toMatchObject({
+      planned: "À acheter",
+      considering: "À décider",
+    });
+  });
+
+  it("propose des catégories générales et conserve une ancienne valeur", () => {
+    expect(purchaseCategoryOptions()[0]).toEqual({
+      value: "",
+      label: "Aucune",
+    });
+    expect(
+      purchaseCategoryOptions("Ancienne catégorie").at(-1),
+    ).toEqual({
+      value: "Ancienne catégorie",
+      label: "Ancienne catégorie",
+    });
+  });
+
   it("conserve tous les achats avec le filtre Tout", () => {
     expect(filterAndSortPurchases(purchases, "all")).toHaveLength(4);
   });
