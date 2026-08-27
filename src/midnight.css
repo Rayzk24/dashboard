@@ -120,7 +120,8 @@ textarea:focus-visible {
 button:active,
 .button:active,
 .nav-item:active,
-.client-list-v051 button:active {
+.client-list-main:active,
+.client-order-button:active {
   transform: scale(0.975);
 }
 
@@ -1335,20 +1336,25 @@ button:active,
   gap: 5px;
 }
 
-.client-list-v051 button {
+.client-list-row {
   min-height: 54px;
-  padding: 10px 11px;
   border: 1px solid transparent;
   border-radius: 15px;
   color: var(--text-primary);
 }
 
-.client-list-v051 button:hover {
+.client-list-main {
+  min-height: 52px;
+  padding: 10px 8px 10px 11px;
+  border-radius: 14px;
+}
+
+.client-list-row:hover {
   border-color: var(--line-soft);
   background: rgba(255, 255, 255, 0.05);
 }
 
-.client-list-v051 button.selected {
+.client-list-row.selected {
   border-color: rgba(10, 132, 255, 0.2);
   background: linear-gradient(
     105deg,
@@ -1357,6 +1363,19 @@ button:active,
   );
   color: var(--text-primary);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.055);
+}
+
+.client-order-actions {
+  padding-right: 7px;
+}
+
+.client-order-button {
+  color: var(--text-tertiary);
+}
+
+.client-order-button:hover:not(:disabled) {
+  background: var(--accent-softer);
+  color: var(--accent-hover);
 }
 
 .client-list-v051 small {

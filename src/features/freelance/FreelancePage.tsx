@@ -1,4 +1,7 @@
 import {
+  ArrowDown,
+  ArrowUp,
+  Archive,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -8,7 +11,7 @@ import {
   Trash2,
   UserPlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppData } from "../../app/AppDataProvider";
 import { AppSelect } from "../../components/ui/AppSelect";
@@ -28,6 +31,10 @@ import {
   visibleFreelanceClients,
 } from "../../lib/finance";
 import { euro, minutesLabel } from "../../lib/format";
+import {
+  moveClientInOrder,
+  reconcileClientOrder,
+} from "../../lib/clientOrder";
 import { noteDisplayTitle } from "../../lib/notes";
 import {
   missionCardClassName,
@@ -57,13 +64,50 @@ export function FreelancePage() {
   const [period, setPeriod] = useState<Period>("month");
   const [modal, setModal] = useState<ModalName>(null);
   const [missionId, setMissionId] = useState<string | null>(null);
+  const [confirmArchive, setConfirmArchive] = useState(false);
+  const clientOrderKey = `rayzk.freelance.client-order.${data.userId}`;
+  const [clientOrder, setClientOrder] = useState<string[]>(() => {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(clientOrderKey) ?? "[]");
+      return Array.isArray(stored)
+        ? stored.filter((value): value is string => typeof value === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const unorderedVisibleClients = useMemo(
+    () => visibleFreelanceClients(data.clients),
+    [data.clients],
+  );
+  const orderedClientIds = useMemo(
+    () =>
+      reconcileClientOrder(
+        unorderedVisibleClients.map((item) => item.id),
+        clientOrder,
+      ),
+    [clientOrder, unorderedVisibleClients],
+  );
+  const visibleClients = useMemo(() => {
+    const byId = new Map(unorderedVisibleClients.map((item) => [item.id, item]));
+    return orderedClientIds.flatMap((id) => {
+      const item = byId.get(id);
+      return item ? [item] : [];
+    });
+  }, [orderedClientIds, unorderedVisibleClients]);
+
   useEffect(() => {
-    if (!clientId && data.clients.length)
-      setClientId(
-        data.clients.find((item) => item.status === "active")?.id ??
-          data.clients[0].id,
-      );
-  }, [clientId, data.clients]);
+    if (clientId && visibleClients.some((item) => item.id === clientId)) return;
+    setClientId(visibleClients[0]?.id ?? "");
+  }, [clientId, visibleClients]);
+  useEffect(() => {
+    if (data.loading) return;
+    try {
+      window.localStorage.setItem(clientOrderKey, JSON.stringify(orderedClientIds));
+    } catch {
+      /* L’ordre courant reste utilisable si le stockage est indisponible. */
+    }
+  }, [clientOrderKey, data.loading, orderedClientIds]);
   const client = data.clients.find((item) => item.id === clientId);
   const scoped = financialDataForPeriod(data.sessions, data.payments, period);
   const summary = globalSummary(
@@ -73,11 +117,34 @@ export function FreelancePage() {
     scoped.payments,
     data.allocations,
   );
-  const visibleClients = visibleFreelanceClients(data.clients);
   const selectClient = (id: string) => {
     setClientId(id);
     setMissionId(null);
     setMobileDetail(true);
+  };
+  const moveClient = (id: string, direction: -1 | 1) => {
+    setClientOrder((current) =>
+      moveClientInOrder(
+        reconcileClientOrder(
+          unorderedVisibleClients.map((item) => item.id),
+          current,
+        ),
+        id,
+        direction,
+      ),
+    );
+  };
+  const archiveClient = async () => {
+    if (!client) return;
+    try {
+      await data.update("clients", client.id, { status: "archived" });
+      setConfirmArchive(false);
+      setMissionId(null);
+      setClientId("");
+      setModal(null);
+    } catch {
+      /* La bannière de synchronisation affiche l’erreur et garde la confirmation ouverte. */
+    }
   };
   return (
     <section className="page freelance-v051">
@@ -143,7 +210,7 @@ export function FreelancePage() {
             </button>
           </header>
           <div className="client-list-v051">
-            {visibleClients.map((item) => {
+            {visibleClients.map((item, index) => {
               const pending = clientSummary(
                 item.id,
                 data.sessions,
@@ -151,19 +218,43 @@ export function FreelancePage() {
                 data.allocations,
               ).remaining;
               return (
-                <button
-                  className={item.id === clientId ? "selected" : ""}
-                  onClick={() => selectClient(item.id)}
+                <div
+                  className={`client-list-row ${item.id === clientId ? "selected" : ""}`}
                   key={item.id}
                 >
-                  <span>
-                    <b>{item.name}</b>
-                    <small>
-                      {pending > 0 ? `${euro(pending)} à recevoir` : "À jour"}
-                    </small>
+                  <button
+                    className="client-list-main"
+                    onClick={() => selectClient(item.id)}
+                  >
+                    <span>
+                      <b>{item.name}</b>
+                      <small>
+                        {pending > 0 ? `${euro(pending)} à recevoir` : "À jour"}
+                      </small>
+                    </span>
+                    <ChevronRight size={16} />
+                  </button>
+                  <span className="client-order-actions" aria-label={`Réordonner ${item.name}`}>
+                    <button
+                      className="client-order-button"
+                      disabled={index === 0}
+                      onClick={() => moveClient(item.id, -1)}
+                      aria-label={`Monter ${item.name}`}
+                      title="Monter"
+                    >
+                      <ArrowUp size={13} />
+                    </button>
+                    <button
+                      className="client-order-button"
+                      disabled={index === visibleClients.length - 1}
+                      onClick={() => moveClient(item.id, 1)}
+                      aria-label={`Descendre ${item.name}`}
+                      title="Descendre"
+                    >
+                      <ArrowDown size={13} />
+                    </button>
                   </span>
-                  <ChevronRight size={16} />
-                </button>
+                </div>
               );
             })}
           </div>
@@ -189,18 +280,49 @@ export function FreelancePage() {
         </Modal>
       )}
       {modal === "edit-client" && client && (
-        <Modal title="Modifier le client" onClose={() => setModal(null)}>
+        <Modal
+          title="Modifier le client"
+          onClose={() => {
+            setConfirmArchive(false);
+            setModal(null);
+          }}
+        >
           <ClientForm client={client} onDone={() => setModal(null)} />
-          <button
-            className="text-link"
-            onClick={() =>
-              void data
-                .update("clients", client.id, { status: "archived" })
-                .then(() => setModal(null))
-            }
-          >
-            Archiver ce client
-          </button>
+          <div className="client-archive-zone">
+            {!confirmArchive ? (
+              <button
+                className="button danger-secondary"
+                onClick={() => setConfirmArchive(true)}
+              >
+                <Archive size={16} /> Archiver ce client
+              </button>
+            ) : (
+              <section className="danger-confirm">
+                <p><b>Archiver « {client.name} » ?</b></p>
+                <p>
+                  Le client disparaîtra de Relations, mais ses missions, sessions,
+                  règlements et notes seront conservés.
+                </p>
+                <div className="button-row">
+                  <button
+                    className="button subtle"
+                    disabled={data.saving}
+                    onClick={() => setConfirmArchive(false)}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    className="button danger-secondary"
+                    disabled={data.saving}
+                    onClick={() => void archiveClient()}
+                  >
+                    <Archive size={16} />
+                    {data.saving ? "Archivage…" : "Confirmer l’archivage"}
+                  </button>
+                </div>
+              </section>
+            )}
+          </div>
         </Modal>
       )}
       {modal === "mission" && client && (
