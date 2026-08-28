@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocationTotal, canSetSessionAmount, clientSummary, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialSummary, inheritedRate, missionCommissionUsed, paymentBreakdown, remainingForSession, sessionAmounts, visibleFreelanceClients } from './finance';
+import { allocationTotal, canSetSessionAmount, clientSummary, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialSummary, globalCommissionUsed, inheritedRate, paymentBreakdown, remainingForSession, sessionAmounts, visibleFreelanceClients } from './finance';
 import { buildPublicReport } from './report';
 import type { Client, Payment, PaymentAllocation, WorkSession } from '../types/domain';
 
@@ -17,11 +17,12 @@ describe('règles freelance', () => {
     expect(sessionAmounts(300, 12, 20, 'billable', 50, 50)).toEqual({ gross: 60, commission: 0, net: 60 });
     expect(sessionAmounts(300, 12, 20, 'billable', null, 45)).toEqual({ gross: 60, commission: 12, net: 48 });
   });
-  it('compte uniquement la commission antérieure dans une mission', () => {
+  it('compte la commission antérieure globalement, avec ou sans mission', () => {
     const first = { ...session, id: 'first', project_id: 'project', session_date: '2026-07-14', commission_amount: 30, created_at: '2026-07-14T10:00:00Z' };
     const current = { ...session, id: 'current', project_id: 'project', session_date: '2026-07-15', commission_amount: 12, created_at: '2026-07-15T10:00:00Z' };
-    const later = { ...session, id: 'later', project_id: 'project', session_date: '2026-07-16', commission_amount: 8, created_at: '2026-07-16T10:00:00Z' };
-    expect(missionCommissionUsed('project', [later, current, first], current.session_date, current)).toBe(30);
+    const withoutMission = { ...session, id: 'global', project_id: null, session_date: '2026-07-14', commission_amount: 8, created_at: '2026-07-14T11:00:00Z' };
+    const later = { ...session, id: 'later', project_id: 'other-project', session_date: '2026-07-16', commission_amount: 5, created_at: '2026-07-16T10:00:00Z' };
+    expect(globalCommissionUsed([later, current, withoutMission, first], current.session_date, current)).toBe(38);
   });
   it('centralise le travail net valorisé, reçu, attribué et à recevoir', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 10 }] as PaymentAllocation[]; const payment = paymentOf('p1', 10, '2026-07-15'); expect(allocationTotal('s1', allocations)).toBe(10); expect(remainingForSession(session, allocations)).toBe(14); expect(clientSummary('c1', [session], [payment], allocations)).toMatchObject({ generated: 24, received: 10, covered: 10, remaining: 14 }); expect(financialSummary([session], [payment], allocations)).toMatchObject({ valued: 24, received: 10, allocated: 10, remaining: 14 }); });
   it('protège une session déjà attribuée et expose le montant non attribué', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 12 }] as PaymentAllocation[]; const payment = paymentOf('p1', 20, '2026-07-15'); expect(canSetSessionAmount(11, allocationTotal('s1', allocations))).toBe(false); expect(canSetSessionAmount(12, allocationTotal('s1', allocations))).toBe(true); expect(paymentBreakdown(payment, allocations)).toEqual({ allocated: 12, unallocated: 8 }); });

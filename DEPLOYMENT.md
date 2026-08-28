@@ -14,6 +14,7 @@ Exportez les tables listées dans [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y comp
 6. Effectuez le test manuel Notes décrit dans `SUPABASE_SETUP.md` avant tout push.
 7. Copiez et exécutez ensuite `supabase/migrations/20260828_v13_commission_cap.sql` avant d'utiliser le plafond de commission.
 8. Exécutez enfin `supabase/migrations/20260828_v14_net_payment_allocations.sql` pour aligner les règlements et statuts sur le montant net.
+9. Exécutez `supabase/migrations/20260828_v15_global_commission_cap.sql` pour utiliser un plafond unique sur toutes les sessions.
 
 ## 3. Variables Cloudflare Pages
 

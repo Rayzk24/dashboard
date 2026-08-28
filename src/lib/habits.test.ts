@@ -164,6 +164,18 @@ describe("missions et paiements", () => {
       ]),
     ).toBe("p1");
   });
+  it("conserve l’association par identifiant après renommage d’une mission", () => {
+    const linkedSession = session("rename", "p1");
+    const renamedProjects = [
+      { id: "p1", client_id: "c", status: "planned", name: "Nouveau nom" },
+    ] as any;
+    expect(
+      projectsForClient("c", renamedProjects).find(
+        (project) => project.id === linkedSession.project_id,
+      )?.name,
+    ).toBe("Nouveau nom");
+    expect(linkedSession.project_id).toBe("p1");
+  });
   it("retourne les états non payé, partiel et payé", () => {
     const s = session("3", "p1");
     const partial = [

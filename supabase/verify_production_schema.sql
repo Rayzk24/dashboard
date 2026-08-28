@@ -118,7 +118,24 @@ select trigger_name, event_object_table, action_timing, event_manipulation
 from information_schema.triggers
 where trigger_schema = 'public'
   and trigger_name in (
-    'work_sessions_sync_project_commissions',
-    'projects_sync_commission_cap'
+    'work_sessions_sync_project_commissions'
   )
 order by trigger_name, event_manipulation;
+
+-- 9. V1.5 global commission cap and user-wide recalculation.
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'app_settings'
+  and column_name = 'commission_cap';
+
+select trigger_name, event_object_table, action_timing, event_manipulation
+from information_schema.triggers
+where trigger_schema = 'public'
+  and trigger_name = 'app_settings_sync_commission_cap';
+
+select proname, proconfig
+from pg_proc
+where pronamespace = 'public'::regnamespace
+  and proname in ('recalculate_user_commissions', 'rebuild_user_payment_allocations')
+order by proname;

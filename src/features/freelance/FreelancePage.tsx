@@ -464,7 +464,7 @@ function ClientWorkspace({
               <SessionRow
                 key={session.id}
                 session={session}
-                mission={missions.find(
+                mission={data.projects.find(
                   (item) => item.id === session.project_id,
                 )}
               />
@@ -826,7 +826,7 @@ function SessionsModal({
           <SessionRow
             key={session.id}
             session={session}
-            mission={missions.find((item) => item.id === session.project_id)}
+            mission={data.projects.find((item) => item.id === session.project_id)}
           />
         ))}
       </div>
