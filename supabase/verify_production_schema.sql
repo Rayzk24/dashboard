@@ -105,3 +105,19 @@ where table_schema = 'public'
   and table_name = 'notes'
   and grantee in ('authenticated', 'anon')
 order by grantee, privilege_type;
+
+-- 8. V1.3 commission cap: nullable project column and automatic recalculation triggers.
+select column_name, data_type, is_nullable, column_default
+from information_schema.columns
+where table_schema = 'public'
+  and table_name = 'projects'
+  and column_name = 'commission_cap';
+
+select trigger_name, event_object_table, action_timing, event_manipulation
+from information_schema.triggers
+where trigger_schema = 'public'
+  and trigger_name in (
+    'work_sessions_sync_project_commissions',
+    'projects_sync_commission_cap'
+  )
+order by trigger_name, event_manipulation;

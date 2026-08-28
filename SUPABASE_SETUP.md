@@ -23,8 +23,15 @@ Dans **Supabase > SQL Editor > New query**, copiez chaque fichier complet et ex�
 7. `supabase/migrations/20260720_v11_management.sql` — RPC de gestion transactionnelles.
 8. `supabase/migrations/20260722_v12_notes.sql` — Notes V1.2.
 9. `supabase/migrations/20260722_v12_notes_permissions.sql` — droit d’accès de la table au rôle authentifié.
+10. `supabase/migrations/20260828_v13_commission_cap.sql` — plafond cumulatif optionnel des commissions par mission.
 
-Pour un projet Rayzk déjà en production, les étapes 1 à 7 sont probablement appliquées. Vérifiez-les avec `supabase/verify_production_schema.sql`, puis exécutez les étapes 8 et 9 dans cet ordre.
+Pour un projet Rayzk déjà en production, les étapes 1 à 9 sont probablement appliquées. Vérifiez-les avec `supabase/verify_production_schema.sql`, puis exécutez l’étape 10 avant d’utiliser un plafond de commission.
+
+## Plafond de commission V1.3
+
+`20260828_v13_commission_cap.sql` ajoute la colonne nullable `projects.commission_cap`. Une valeur vide conserve exactement le calcul historique non plafonné. La migration installe aussi des triggers internes qui recalculent les commissions des sessions d’une mission par `session_date`, `created_at`, puis `id`. Ainsi, une création, une modification ou un changement de plafond ne peut pas laisser la commission cumulée dépasser le plafond.
+
+Après exécution, vérifiez que la colonne existe puis créez une session temporaire sur une mission de test avec un plafond. Ne testez pas une suppression sur des données réelles.
 
 ## Migration Notes V1.2
 

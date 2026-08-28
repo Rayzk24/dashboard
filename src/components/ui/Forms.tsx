@@ -11,6 +11,7 @@ import {
   durationMinutes,
   inheritedRate,
   lastProjectForClient,
+  missionCommissionUsed,
   sessionAmounts,
 } from "../../lib/finance";
 import { euro, numberOrNull } from "../../lib/format";
@@ -218,6 +219,7 @@ export function SessionForm({
   const [commission, setCommission] = useState(
     session?.commission_rate ? String(session.commission_rate) : "",
   );
+  const [commissionCap, setCommissionCap] = useState("");
   const [category, setCategory] = useState<TimeCategory>(
     session?.time_category ?? "billable",
   );
@@ -247,6 +249,11 @@ export function SessionForm({
     [clientId, projects],
   );
   const project = options.find((item) => item.id === projectId);
+  useEffect(() => {
+    setCommissionCap(
+      project?.commission_cap == null ? "" : String(project.commission_cap),
+    );
+  }, [project?.id, project?.commission_cap]);
   useEffect(() => {
     if (session || !clientId) return;
     if (fixedProjectId) {
@@ -281,11 +288,18 @@ export function SessionForm({
       );
   const appliedCommission =
     numberOrNull(commission) ?? Number(project?.commission_rate ?? 0);
+  const appliedCommissionCap =
+    project && appliedCommission > 0 ? numberOrNull(commissionCap) : null;
+  const commissionAlreadyUsed = project
+    ? missionCommissionUsed(project.id, sessions, date, session)
+    : 0;
   const preview = sessionAmounts(
     actualDuration,
     appliedRate,
     appliedCommission,
     category,
+    appliedCommissionCap,
+    commissionAlreadyUsed,
   );
   const durationLabel = [
     Math.floor(actualDuration / 60)
@@ -302,6 +316,13 @@ export function SessionForm({
     setError(null);
     if (!client || !title.trim()) {
       setError("Le titre de la session est obligatoire.");
+      return;
+    }
+    if (
+      appliedCommissionCap !== null &&
+      (!Number.isFinite(appliedCommissionCap) || appliedCommissionCap < 0)
+    ) {
+      setError("Le plafond de commission doit être un montant positif.");
       return;
     }
     const alreadyAllocated = session
@@ -331,6 +352,17 @@ export function SessionForm({
       net_amount: preview.net,
     };
     try {
+      const storedCommissionCap =
+        project?.commission_cap == null ? null : Number(project.commission_cap);
+      if (
+        project &&
+        appliedCommission > 0 &&
+        storedCommissionCap !== appliedCommissionCap
+      ) {
+        await update("projects", project.id, {
+          commission_cap: appliedCommissionCap,
+        });
+      }
       if (session) await update("work_sessions", session.id, values);
       else await create("work_sessions", { ...values, client_id: client.id });
       onDone?.();
@@ -505,7 +537,25 @@ export function SessionForm({
                 placeholder="0"
               />
             </Field>
+            {project && appliedCommission > 0 && (
+              <Field label="Plafond commission (€)">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={commissionCap}
+                  onChange={(event) => setCommissionCap(event.target.value)}
+                  placeholder="Sans plafond"
+                />
+              </Field>
+            )}
           </div>
+          {project && appliedCommissionCap !== null && (
+            <p className="form-hint">
+              {euro(Math.min(commissionAlreadyUsed, appliedCommissionCap))} de
+              commission déjà utilisés sur {euro(appliedCommissionCap)}.
+            </p>
+          )}
           <Field label="Catégorie">
             <AppSelect
               ariaLabel="Catégorie de la session"
@@ -736,6 +786,8 @@ export function PurchaseForm({ onDone }: { onDone?: () => void }) {
 export function stopRunningSession(
   session: WorkSession,
   update: ReturnType<typeof useAppData>["update"],
+  sessions: WorkSession[] = [],
+  project?: Project,
 ) {
   const end = new Date().toISOString();
   const minutes = durationMinutes(session.started_at, end);
@@ -744,6 +796,10 @@ export function stopRunningSession(
     Number(session.hourly_rate),
     Number(session.commission_rate),
     session.time_category,
+    project?.commission_cap == null ? null : Number(project.commission_cap),
+    project
+      ? missionCommissionUsed(project.id, sessions, session.session_date, session)
+      : 0,
   );
   return update("work_sessions", session.id, {
     is_running: false,

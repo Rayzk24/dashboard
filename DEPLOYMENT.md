@@ -4,7 +4,7 @@
 
 Exportez les tables listées dans [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y compris `notes` si elle existe déjà. Conservez les CSV hors du dépôt.
 
-## 2. Appliquer Notes V1.2
+## 2. Appliquer les migrations applicatives
 
 1. Vérifiez que les migrations jusqu’à `20260720_v11_management.sql` sont déjà présentes.
 2. Dans SQL Editor, copiez puis exécutez `supabase/migrations/20260722_v12_notes.sql`.
@@ -12,6 +12,7 @@ Exportez les tables listées dans [SUPABASE_SETUP.md](SUPABASE_SETUP.md), y comp
 4. Exécutez `supabase/verify_production_schema.sql`.
 5. Vérifiez la table, ses privilèges, le trigger, `ON DELETE SET NULL` et les quatre politiques RLS.
 6. Effectuez le test manuel Notes décrit dans `SUPABASE_SETUP.md` avant tout push.
+7. Copiez et exécutez ensuite `supabase/migrations/20260828_v13_commission_cap.sql` avant d'utiliser le plafond de commission.
 
 ## 3. Variables Cloudflare Pages
 
