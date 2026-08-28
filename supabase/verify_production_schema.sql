@@ -70,7 +70,8 @@ where pronamespace = 'public'::regnamespace
     'delete_habit_with_history', 'delete_project_keep_sessions',
     'create_payment_and_rebuild_allocations', 'update_payment_and_rebuild_allocations',
     'delete_payment_and_rebuild_allocations', 'delete_work_session_and_rebuild_allocations',
-    'rebuild_client_payment_allocations', 'prevent_underallocated_work_session'
+    'rebuild_client_payment_allocations', 'rebuild_client_payment_allocations_for_owner',
+    'prevent_underallocated_work_session'
   )
 order by proname;
 

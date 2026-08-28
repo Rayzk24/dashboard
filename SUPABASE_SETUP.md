@@ -24,8 +24,11 @@ Dans **Supabase > SQL Editor > New query**, copiez chaque fichier complet et ex�
 8. `supabase/migrations/20260722_v12_notes.sql` — Notes V1.2.
 9. `supabase/migrations/20260722_v12_notes_permissions.sql` — droit d’accès de la table au rôle authentifié.
 10. `supabase/migrations/20260828_v13_commission_cap.sql` — plafond cumulatif optionnel des commissions par mission.
+11. `supabase/migrations/20260828_v14_net_payment_allocations.sql` — règlements et statuts calculés sur le montant net après commission.
 
 Pour un projet Rayzk déjà en production, les étapes 1 à 9 sont probablement appliquées. Vérifiez-les avec `supabase/verify_production_schema.sql`, puis exécutez l’étape 10 avant d’utiliser un plafond de commission.
+
+Après V1.3, exécutez immédiatement l’étape 11. Elle conserve intégralement les règlements existants et reconstruit uniquement leurs allocations dérivées selon le montant net des sessions. Une session brute de 36 € avec 20 % de commission est ainsi entièrement couverte par 28,80 € reçus.
 
 ## Plafond de commission V1.3
 

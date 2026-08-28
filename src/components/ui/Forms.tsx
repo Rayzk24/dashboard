@@ -328,7 +328,7 @@ export function SessionForm({
     const alreadyAllocated = session
       ? allocationTotal(session.id, allocations)
       : 0;
-    if (preview.gross < alreadyAllocated) {
+    if (preview.net < alreadyAllocated) {
       setError(
         `Cette session possède déjà ${euro(alreadyAllocated)} attribués par des règlements. Son nouveau montant ne peut pas être inférieur à cette somme. Modifiez d’abord les règlements concernés.`,
       );

@@ -930,7 +930,7 @@ export function SessionRow({
           </small>
         </div>
         <div>
-          <strong>{euro(Number(session.gross_amount))}</strong>
+          <strong>{euro(Number(session.net_amount))}</strong>
           <Status>
             {state === "paid"
               ? "Payée"

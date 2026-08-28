@@ -179,6 +179,17 @@ describe("missions et paiements", () => {
     expect(sessionPaymentState(s, [])).toBe("unpaid");
     expect(sessionPaymentState(s, partial)).toBe("partial");
     expect(sessionPaymentState(s, paid)).toBe("paid");
+    const commissioned = {
+      ...s,
+      gross_amount: 36,
+      commission_amount: 7.2,
+      net_amount: 28.8,
+    };
+    expect(
+      sessionPaymentState(commissioned, [
+        { ...partial[0], allocated_amount: 28.8 },
+      ]),
+    ).toBe("paid");
   });
   it("filtre les missions du client courant et répartit un règlement", () => {
     const sessions = [
