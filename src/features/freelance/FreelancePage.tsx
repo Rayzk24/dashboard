@@ -24,12 +24,15 @@ import {
 import { Empty, Modal, Status } from "../../components/ui/Modal";
 import {
   clientSummary,
+  compareSessionsNewestFirst,
   financialDataForPeriod,
+  financialPeriodPreference,
   financialSummary,
   projectsForClient,
   sessionPaymentState,
   visibleFreelanceClients,
 } from "../../lib/finance";
+import type { FinancialPeriod } from "../../lib/finance";
 import { euro, minutesLabel } from "../../lib/format";
 import {
   moveClientInOrder,
@@ -45,7 +48,7 @@ import { PaymentDetailsModal } from "./PaymentDetailsModal";
 import { ReportPanel } from "./ReportPanel";
 import { SessionDetailsModal } from "./SessionDetailsModal";
 
-type Period = "week" | "month" | "year" | "all";
+type Period = FinancialPeriod;
 type ModalName =
   | "client"
   | "edit-client"
@@ -61,7 +64,14 @@ export function FreelancePage() {
   const data = useAppData();
   const [clientId, setClientId] = useState("");
   const [mobileDetail, setMobileDetail] = useState(false);
-  const [period, setPeriod] = useState<Period>("month");
+  const periodStorageKey = `rayzk.freelance.period.${data.userId}`;
+  const [period, setPeriod] = useState<Period>(() => {
+    try {
+      return financialPeriodPreference(window.localStorage.getItem(periodStorageKey));
+    } catch {
+      return "month";
+    }
+  });
   const [modal, setModal] = useState<ModalName>(null);
   const [missionId, setMissionId] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -108,6 +118,13 @@ export function FreelancePage() {
       /* L’ordre courant reste utilisable si le stockage est indisponible. */
     }
   }, [clientOrderKey, data.loading, orderedClientIds]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(periodStorageKey, period);
+    } catch {
+      /* La période reste utilisable pour la session si le stockage est indisponible. */
+    }
+  }, [period, periodStorageKey]);
   const client = data.clients.find((item) => item.id === clientId);
   const scoped = financialDataForPeriod(data.sessions, data.payments, period);
   const summary = globalSummary(
@@ -406,7 +423,7 @@ function ClientWorkspace({
   );
   const recent = sessions
     .slice()
-    .sort((a, b) => b.session_date.localeCompare(a.session_date))
+    .sort(compareSessionsNewestFirst)
     .slice(0, 5);
   return (
     <>
@@ -758,6 +775,7 @@ function SessionsModal({
     sessions = sessions.filter((item) => item.project_id === mission);
   if (from) sessions = sessions.filter((item) => item.session_date >= from);
   if (to) sessions = sessions.filter((item) => item.session_date <= to);
+  sessions = sessions.slice().sort(compareSessionsNewestFirst);
   const missions = projectsForClient(client.id, data.projects);
   return (
     <Modal title={`Sessions · ${client.name}`} onClose={onClose}>

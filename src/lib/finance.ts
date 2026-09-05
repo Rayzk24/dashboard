@@ -28,6 +28,21 @@ export function deterministicAllocationPlan(sessions: WorkSession[], payments: P
 
 export type FinancialPeriod = 'week' | 'month' | 'year' | 'all';
 
+export function financialPeriodPreference(value: string | null): FinancialPeriod {
+  return value === 'week' || value === 'month' || value === 'year' || value === 'all'
+    ? value
+    : 'month';
+}
+
+export function compareSessionsNewestFirst(a: WorkSession, b: WorkSession) {
+  const dateOrder = b.session_date.localeCompare(a.session_date);
+  if (dateOrder) return dateOrder;
+
+  const aTimestamp = a.started_at ?? a.ended_at ?? a.created_at ?? `${a.session_date}T00:00:00`;
+  const bTimestamp = b.started_at ?? b.ended_at ?? b.created_at ?? `${b.session_date}T00:00:00`;
+  return bTimestamp.localeCompare(aTimestamp) || b.id.localeCompare(a.id);
+}
+
 function localDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');

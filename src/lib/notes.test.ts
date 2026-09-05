@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  accessibleNotePreference,
   filterNotes,
   findHexColors,
   noteClientSnapshot,
@@ -25,6 +26,13 @@ const note = (values: Partial<Note>): Note => ({
 });
 
 describe('notes', () => {
+  it('restaure seulement une dernière note encore accessible', () => {
+    const values = [note({ id: 'available' })];
+    expect(accessibleNotePreference('available', values)).toBe('available');
+    expect(accessibleNotePreference('deleted', values)).toBeNull();
+    expect(accessibleNotePreference(null, values)).toBeNull();
+  });
+
   it('restaure uniquement un filtre de notes valide', () => {
     expect(noteFilterPreference('global')).toBe('global');
     expect(noteFilterPreference('clients')).toBe('clients');

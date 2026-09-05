@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allocationTotal, canSetSessionAmount, clientSummary, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialSummary, globalCommissionUsed, inheritedRate, paymentBreakdown, remainingForSession, sessionAmounts, visibleFreelanceClients } from './finance';
+import { allocationTotal, canSetSessionAmount, clientSummary, compareSessionsNewestFirst, deterministicAllocationPlan, durationMinutes, financialDataForPeriod, financialPeriodPreference, financialSummary, globalCommissionUsed, inheritedRate, paymentBreakdown, remainingForSession, sessionAmounts, visibleFreelanceClients } from './finance';
 import { buildPublicReport } from './report';
 import type { Client, Payment, PaymentAllocation, WorkSession } from '../types/domain';
 
@@ -37,6 +37,20 @@ describe('règles freelance', () => {
 });
 
 describe('périodes financières', () => {
+  it('restaure uniquement une période enregistrée valide', () => {
+    expect(financialPeriodPreference('week')).toBe('week');
+    expect(financialPeriodPreference('all')).toBe('all');
+    expect(financialPeriodPreference('inconnue')).toBe('month');
+    expect(financialPeriodPreference(null)).toBe('month');
+  });
+
+  it('trie les sessions récentes avec un départage temporel fiable', () => {
+    const morning = { ...session, id: 'morning', session_date: '2026-07-22', started_at: '2026-07-22T08:00:00Z', created_at: '2026-07-22T08:01:00Z' };
+    const evening = { ...session, id: 'evening', session_date: '2026-07-22', started_at: '2026-07-22T18:00:00Z', created_at: '2026-07-22T18:01:00Z' };
+    const previous = { ...session, id: 'previous', session_date: '2026-07-21', started_at: '2026-07-21T23:00:00Z', created_at: '2026-07-21T23:01:00Z' };
+    expect([morning, previous, evening].sort(compareSessionsNewestFirst).map((item) => item.id)).toEqual(['evening', 'morning', 'previous']);
+  });
+
   it('filtre indépendamment les sessions et les règlements de la semaine', () => {
     const thisWeekSession = { ...session, id: 's-week', session_date: '2026-07-22', gross_amount: 150, net_amount: 150 };
     const outsideWeekSession = { ...session, id: 's-outside', session_date: '2026-07-19', gross_amount: 50, net_amount: 50 };

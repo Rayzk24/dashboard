@@ -6,6 +6,10 @@ export function noteFilterPreference(value: string | null): NoteFilter {
   return value === 'global' || value === 'clients' || value === 'all' ? value : 'all';
 }
 
+export function accessibleNotePreference(value: string | null, notes: Pick<Note, 'id'>[]) {
+  return value && notes.some((note) => note.id === value) ? value : null;
+}
+
 export function sortNotes(notes: Note[]) {
   return notes.slice().sort(
     (a, b) =>

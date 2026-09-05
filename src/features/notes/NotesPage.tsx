@@ -28,6 +28,7 @@ import { Empty, Modal } from '../../components/ui/Modal';
 import { AutosaveQueue, type AutosaveStatus } from '../../lib/noteAutosave';
 import { visibleFreelanceClients } from '../../lib/finance';
 import {
+  accessibleNotePreference,
   filterNotes,
   noteClientSnapshot,
   noteDisplayTitle,
@@ -49,6 +50,7 @@ export function NotesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState('');
   const filterStorageKey = `rayzk.notes.filter.${data.userId}`;
+  const lastNoteStorageKey = `rayzk.notes.last-opened.${data.userId}`;
   const [filter, setFilter] = useState<NoteFilter>(() => {
     try {
       return noteFilterPreference(window.localStorage.getItem(filterStorageKey));
@@ -61,6 +63,7 @@ export function NotesPage() {
   const flushRef = useRef<(() => Promise<boolean>) | null>(null);
   const automaticCreation = useRef<string | null>(null);
   const clientFilter = searchParams.get('client');
+  const searchString = searchParams.toString();
   const activeFilter: NoteFilter = clientFilter ? 'clients' : filter;
   const selected = noteId ? data.notes.find((note) => note.id === noteId) : undefined;
   const visibleNotes = useMemo(
@@ -75,6 +78,44 @@ export function NotesPage() {
       /* Le filtre reste utilisable pour la session si le stockage est indisponible. */
     }
   }, [filter, filterStorageKey]);
+
+  useEffect(() => {
+    if (data.loading) return;
+
+    if (noteId) {
+      const accessibleId = accessibleNotePreference(noteId, data.notes);
+      if (accessibleId) {
+        try {
+          window.localStorage.setItem(lastNoteStorageKey, accessibleId);
+        } catch {
+          /* La note courante reste ouverte si le stockage est indisponible. */
+        }
+        return;
+      }
+
+      try {
+        window.localStorage.removeItem(lastNoteStorageKey);
+      } catch {
+        /* Le retour à la liste ne dépend pas du stockage. */
+      }
+      navigate({ pathname: '/notes', search: searchString ? `?${searchString}` : '' }, { replace: true });
+      return;
+    }
+
+    if (searchParams.has('newClient') || clientFilter) return;
+
+    let storedId: string | null = null;
+    try {
+      storedId = accessibleNotePreference(
+        window.localStorage.getItem(lastNoteStorageKey),
+        data.notes,
+      );
+      if (!storedId) window.localStorage.removeItem(lastNoteStorageKey);
+    } catch {
+      return;
+    }
+    if (storedId) navigate(`/notes/${storedId}`, { replace: true });
+  }, [clientFilter, data.loading, data.notes, lastNoteStorageKey, navigate, noteId, searchParams, searchString]);
 
   const create = async (clientId: string | null) => {
     setCreating(true);
@@ -116,6 +157,13 @@ export function NotesPage() {
   };
 
   const afterDelete = (deletedId: string) => {
+    try {
+      if (window.localStorage.getItem(lastNoteStorageKey) === deletedId) {
+        window.localStorage.removeItem(lastNoteStorageKey);
+      }
+    } catch {
+      /* La suppression reste effective si le stockage est indisponible. */
+    }
     const next = visibleNotes.find((note) => note.id !== deletedId);
     const search = searchParams.toString();
     navigate({
