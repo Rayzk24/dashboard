@@ -2,6 +2,7 @@ import {
   ArrowDown,
   ArrowUp,
   Archive,
+  BarChart3,
   ChevronLeft,
   ChevronRight,
   FileText,
@@ -45,6 +46,7 @@ import {
 } from "../../lib/missionPresentation";
 import type { Client, Payment, Project, WorkSession } from "../../types/domain";
 import { PaymentDetailsModal } from "./PaymentDetailsModal";
+import { FreelanceAnalytics } from "./FreelanceAnalytics";
 import { ReportPanel } from "./ReportPanel";
 import { SessionDetailsModal } from "./SessionDetailsModal";
 
@@ -64,6 +66,7 @@ export function FreelancePage() {
   const data = useAppData();
   const [clientId, setClientId] = useState("");
   const [mobileDetail, setMobileDetail] = useState(false);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const periodStorageKey = `rayzk.freelance.period.${data.userId}`;
   const [period, setPeriod] = useState<Period>(() => {
     try {
@@ -180,18 +183,27 @@ export function FreelancePage() {
             <p className="eyebrow">Vue globale</p>
             <h2>Suivi professionnel</h2>
           </div>
-          <AppSelect
-            className="period-select"
-            ariaLabel="Période de la vue globale"
-            value={period}
-            onChange={(value) => setPeriod(value as Period)}
-            options={[
-              { value: "week", label: "Cette semaine" },
-              { value: "month", label: "Ce mois" },
-              { value: "year", label: "Cette année" },
-              { value: "all", label: "Tout" },
-            ]}
-          />
+          <div className="freelance-global-actions">
+            <button
+              className="button subtle analytics-trigger"
+              type="button"
+              onClick={() => setAnalyticsOpen(true)}
+            >
+              <BarChart3 size={16} /> Analyses
+            </button>
+            <AppSelect
+              className="period-select"
+              ariaLabel="Période de la vue globale"
+              value={period}
+              onChange={(value) => setPeriod(value as Period)}
+              options={[
+                { value: "week", label: "Cette semaine" },
+                { value: "month", label: "Ce mois" },
+                { value: "year", label: "Cette année" },
+                { value: "all", label: "Tout" },
+              ]}
+            />
+          </div>
         </header>
         <div className="metric-grid four">
           <Metric
@@ -384,6 +396,15 @@ export function FreelancePage() {
           <ReportPanel
             clientId={client.id}
             projectId={missionId ?? undefined}
+          />
+        </Modal>
+      )}
+      {analyticsOpen && (
+        <Modal title="Analyses Freelance" onClose={() => setAnalyticsOpen(false)}>
+          <FreelanceAnalytics
+            sessions={data.sessions}
+            period={period}
+            onPeriodChange={setPeriod}
           />
         </Modal>
       )}
