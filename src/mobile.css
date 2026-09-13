@@ -1,0 +1,143 @@
+/* Mobile ergonomics; the desktop theme remains in midnight.css. */
+@media (max-width: 850px) {
+  html { scroll-padding-top: calc(16px + env(safe-area-inset-top)); }
+  .app-shell { min-height: 100svh; }
+  .content { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  .topbar {
+    height: auto;
+    min-height: calc(64px + env(safe-area-inset-top));
+    padding: calc(8px + env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 8px max(18px, env(safe-area-inset-left));
+  }
+  .page { padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+  .mobile-nav { left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); }
+  html[data-mobile-keyboard] .mobile-nav { display: none; }
+  html[data-mobile-keyboard] .content { padding-bottom: 20px; }
+  .topbar > div, .page, .panel, .field, .app-select, .notes-layout,
+  .note-rich-editor, .note-rich-editor > div, .client-workspace-v051,
+  .workspace-section, .purchase-row > div, .settings-group-heading > div {
+    min-width: 0;
+  }
+  /* 16px avoids Safari's input focus zoom, without disabling pinch zoom. */
+  .field input, .field textarea, .notes-search input, .login-form input,
+  .password-field input { font-size: 16px; max-width: 100%; min-width: 0; }
+  input[type="date"], input[type="datetime-local"] { min-width: 0; width: 100%; }
+  input, textarea, [contenteditable="true"] { scroll-margin-block: 78px 90px; }
+  .button, .icon-button, .mobile-back, .mobile-settings, .app-select-trigger,
+  .filter-tabs button, .filter-row button, .notes-filters button,
+  .weekday-picker button, .analytics-switch button, .password-visibility {
+    min-height: 44px;
+  }
+  .icon-button, .mobile-settings, .password-visibility { min-width: 44px; flex-shrink: 0; }
+  button, a { touch-action: manipulation; }
+  .text-link { min-height: 44px; display: inline-flex; align-items: center; }
+  .button { white-space: normal; line-height: 1.35; height: auto; padding-block: 10px; }
+  .button svg, .check-mark, .settings-group-icon, .priority-dot { flex-shrink: 0; }
+  .page-intro { margin-bottom: 20px; gap: 13px; }
+  .page-intro h1 { font-size: clamp(28px, 7.7vw, 36px); line-height: 1.1; }
+  .page-subtitle { font-size: 14px; line-height: 1.5; }
+  .section-title { flex-wrap: wrap; gap: 10px; }
+  .page h2, .modal-header h2 { overflow-wrap: anywhere; }
+  .metric { min-width: 0; padding: 13px; }
+  .metric strong { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+  .check-row { min-height: 50px; height: auto; text-align: left; overflow-wrap: anywhere; }
+  .home-session-openable { min-height: 58px; padding-block: 13px; overflow-wrap: anywhere; }
+  .home-session-openable small { line-height: 1.5; }
+  .weekly-panel .section-title { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .weekly-panel .section-title h2 { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .week-actions { display: flex; justify-content: space-between; width: 100%; gap: 8px; }
+  .weekly-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; padding-bottom: 7px; }
+  .weekly-grid { gap: 5px; min-width: 520px; }
+  .weekly-habit, .weekly-corner {
+    position: sticky; left: 0; z-index: 2;
+    background: var(--background-elevated); border-radius: 9px;
+    padding: 8px; overflow-wrap: anywhere;
+  }
+  .week-cell { min-height: 46px; }
+  .month-grid { gap: 3px; }
+  .month-day { min-height: 44px; height: auto; }
+  .habit-manage-row { flex-wrap: wrap; column-gap: 14px; }
+  .habit-manage-row > span { min-width: 140px; overflow-wrap: anywhere; }
+  .client-list-main { min-width: 0; }
+  .client-list-main > span { min-width: 0; overflow-wrap: anywhere; }
+  .client-order-actions { flex-shrink: 0; gap: 0; }
+  .client-order-button { width: 44px; min-height: 44px; }
+  .client-workspace-head h2, .mission-row, .session-row-v051,
+  .payment-history-row, .allocation-row { overflow-wrap: anywhere; }
+  .workspace-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .workspace-actions .button { flex: 1 1 130px; }
+  .session-row-v051 { flex-wrap: wrap; gap: 8px; padding-block: 13px; }
+  .session-row-v051 > div:first-child { flex: 1 1 180px; min-width: 0; }
+  .session-row-v051 > div:last-child { max-width: 100%; min-width: 0; }
+  .session-row-v051 .status-pill { white-space: normal; text-align: center; }
+  .session-title-button { min-height: 44px; display: block; }
+  .payment-history-row, .allocation-row { gap: 9px; }
+  .payment-history-row > span, .allocation-row > span { min-width: 0; }
+  .payment-history-row small, .allocation-row small { line-height: 1.5; }
+  .notes-layout, .notes-sidebar, .notes-editor-panel, .note-editor-view {
+    min-height: calc(100svh - 190px);
+  }
+  .notes-editor-panel { overflow: visible; padding: 0; }
+  .note-editor-header { border-radius: 21px 21px 0 0; }
+  .note-title-row { gap: 4px; }
+  .note-save-status { white-space: normal; line-height: 1.4; }
+  .note-title-input { font-size: 26px; min-height: 44px; }
+  .note-meta-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 7px 10px; }
+  .note-client-select { grid-column: 1 / -1; }
+  .note-meta-row .danger-action { width: auto; min-height: 44px; font-size: 11px; }
+  .note-meta-row .former-client { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  .note-toolbar { top: env(safe-area-inset-top); padding: 5px 9px; }
+  .note-toolbar button { min-width: 44px; height: 44px; flex-basis: 44px; }
+  .note-rich-editor .tiptap { min-height: 42svh; padding: 18px 17px 55px; overflow-wrap: anywhere; }
+  .note-rich-editor .tiptap pre { max-width: 100%; overflow-x: auto; white-space: pre; }
+  .note-rich-editor .tiptap li[data-type="taskItem"] > label { min-width: 32px; min-height: 44px; align-items: center; }
+  .notes-new-button { flex-shrink: 0; }
+  .note-delete-confirm { margin-bottom: 22px; }
+  .note-list-item { overflow-wrap: anywhere; }
+  .purchase-row { width: 100%; gap: 9px; }
+  .purchase-row b, .purchase-row small { overflow-wrap: anywhere; }
+  .purchase-actions { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) repeat(3, auto); gap: 6px; }
+  .purchase-actions strong { grid-column: 1 / -1; }
+  .purchase-status-select { width: auto; min-width: 0; }
+  .settings-group { gap: 13px; }
+  .settings-group-heading p { line-height: 1.5; }
+  .settings-action-row { min-width: 0; }
+  .settings-action-row > span { min-width: 0; overflow-wrap: anywhere; }
+  .modal-backdrop {
+    position: fixed; inset: auto 0;
+    top: var(--visible-top, 0px); height: var(--visible-height, 100dvh);
+    overflow: hidden; padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .modal-panel, .modal-panel:has(.freelance-analytics) {
+    width: 100%; max-height: 100%; min-height: 0;
+    overflow-y: auto; overscroll-behavior-y: contain;
+    scroll-padding-block: 76px 20px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  html[data-mobile-keyboard] .modal-panel { padding-bottom: 18px; }
+  .modal-header { gap: 10px; align-items: center; }
+  .modal-header h2 { min-width: 0; font-size: 19px; }
+  .modal-header .icon-button { flex-shrink: 0; }
+  .form-grid { gap: 13px; min-width: 0; }
+  .duration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .duration-presets { touch-action: auto; min-width: 0; }
+  .duration-presets button { min-height: 44px; }
+  .report-sessions { grid-auto-rows: max-content; max-height: min(42svh, 360px); overscroll-behavior-y: contain; }
+  .report-session-choice { min-width: 0; gap: 10px; line-height: 1.5; }
+  .report-session-choice > span { min-width: 0; overflow-wrap: anywhere; }
+  .report-select-actions { flex-wrap: wrap; gap: 5px 14px; }
+  .report-preview { padding: 13px; overflow-wrap: anywhere; }
+  .app-select-menu { overscroll-behavior: contain; }
+  .app-select-option { min-height: 46px; height: auto; }
+  .app-select-option > span { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
+  .analytics-comparison-row, .analytics-summary { min-width: 0; }
+  .error-banner { align-items: flex-start; overflow-wrap: anywhere; }
+}
+
+@media (max-width: 560px) {
+  .month-grid { margin-inline: -6px; }
+  .home-finance .metric:last-child, .client-workspace-v051 > .metric-grid.three > .metric:last-child { grid-column: 1 / -1; }
+  .purchase-actions { grid-template-columns: minmax(0, 1fr) repeat(3, 44px); }
+  .purchase-actions:not(:has(a)) { grid-template-columns: minmax(0, 1fr) repeat(2, 44px); }
+  .habit-manage-row > span { flex-basis: 100%; }
+  .notes-list-header { flex-wrap: wrap; }
+}

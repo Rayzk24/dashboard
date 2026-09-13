@@ -52,20 +52,22 @@ export function selectMenuPosition(
   viewportWidth: number,
   viewportHeight: number,
   optionCount: number,
+  viewportLeft = 0,
+  viewportTop = 0,
 ): SelectPosition {
   const gutter = 8;
   const gap = 6;
   const width = Math.min(Math.max(rect.width + 6, 180), viewportWidth - gutter * 2);
   const desiredHeight = Math.min(Math.max(optionCount * 44 + 12, 56), 280);
-  const spaceBelow = viewportHeight - rect.bottom - gutter;
-  const spaceAbove = rect.top - gutter;
+  const spaceBelow = viewportTop + viewportHeight - rect.bottom - gutter;
+  const spaceAbove = rect.top - viewportTop - gutter;
   const placement = spaceBelow < desiredHeight && spaceAbove > spaceBelow ? "top" : "bottom";
-  const available = Math.max(96, placement === "top" ? spaceAbove - gap : spaceBelow - gap);
-  const maxHeight = Math.min(desiredHeight, available);
-  const left = Math.min(Math.max(gutter, rect.left), viewportWidth - width - gutter);
+  const available = Math.max(44, placement === "top" ? spaceAbove - gap : spaceBelow - gap);
+  const maxHeight = Math.min(desiredHeight, available, Math.max(0, viewportHeight - gutter * 2));
+  const left = Math.min(Math.max(viewportLeft + gutter, rect.left), viewportLeft + viewportWidth - width - gutter);
   const top = placement === "top"
-    ? Math.max(gutter, rect.top - maxHeight - gap)
-    : Math.min(viewportHeight - maxHeight - gutter, rect.bottom + gap);
+    ? Math.max(viewportTop + gutter, rect.top - maxHeight - gap)
+    : Math.max(viewportTop + gutter, Math.min(viewportTop + viewportHeight - maxHeight - gutter, rect.bottom + gap));
   return { left, top, width, maxHeight, placement };
 }
 
@@ -115,6 +117,7 @@ export function AppSelect({
     if (event.key === "Escape") {
       if (open) {
         event.preventDefault();
+        event.stopPropagation();
         close();
       }
       return;
@@ -151,34 +154,50 @@ export function AppSelect({
 
   useLayoutEffect(() => {
     if (!open) return;
+    const viewport = window.visualViewport;
+    let frame = 0;
     const updatePosition = () => {
+      frame = 0;
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
       setPosition(
-        selectMenuPosition(rect, window.innerWidth, window.innerHeight, options.length),
+        selectMenuPosition(rect, viewport?.width ?? window.innerWidth, viewport?.height ?? window.innerHeight, options.length, viewport?.offsetLeft, viewport?.offsetTop),
       );
+    };
+    const schedulePosition = (event?: Event) => {
+      if (event?.target instanceof Node && menuRef.current?.contains(event.target)) return;
+      if (!frame) frame = requestAnimationFrame(updatePosition);
     };
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node;
       if (!triggerRef.current?.contains(target) && !menuRef.current?.contains(target)) close();
     };
     const onEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === "Escape") close(true);
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        close(true);
+      }
     };
     updatePosition();
     const animationFrame = requestAnimationFrame(updatePosition);
     const settleTimer = window.setTimeout(updatePosition, 220);
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("keydown", onEscape);
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", schedulePosition);
+    window.addEventListener("scroll", schedulePosition, true);
+    viewport?.addEventListener("resize", schedulePosition);
+    viewport?.addEventListener("scroll", schedulePosition);
     return () => {
       cancelAnimationFrame(animationFrame);
+      cancelAnimationFrame(frame);
       window.clearTimeout(settleTimer);
       document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("keydown", onEscape);
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", schedulePosition);
+      window.removeEventListener("scroll", schedulePosition, true);
+      viewport?.removeEventListener("resize", schedulePosition);
+      viewport?.removeEventListener("scroll", schedulePosition);
     };
   }, [open, options.length]);
 

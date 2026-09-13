@@ -40,7 +40,7 @@ import { emptyNoteDocument, type UpdateNoteInput } from '../../services/notes';
 import type { Note, NoteDocument } from '../../types/domain';
 import { RichNoteEditor, type NoteEditorValue } from './RichNoteEditor';
 
-type LocationState = { focusTitle?: boolean } | null;
+type LocationState = { focusTitle?: boolean; showList?: boolean } | null;
 
 export function NotesPage() {
   const data = useAppData();
@@ -102,7 +102,7 @@ export function NotesPage() {
       return;
     }
 
-    if (searchParams.has('newClient') || clientFilter) return;
+    if (searchParams.has('newClient') || clientFilter || creating || (location.state as LocationState)?.showList) return;
 
     let storedId: string | null = null;
     try {
@@ -115,7 +115,7 @@ export function NotesPage() {
       return;
     }
     if (storedId) navigate(`/notes/${storedId}`, { replace: true });
-  }, [clientFilter, data.loading, data.notes, lastNoteStorageKey, navigate, noteId, searchParams, searchString]);
+  }, [clientFilter, creating, data.loading, data.notes, lastNoteStorageKey, location.state, navigate, noteId, searchParams, searchString]);
 
   const create = async (clientId: string | null) => {
     setCreating(true);
@@ -153,7 +153,7 @@ export function NotesPage() {
     navigate({
       pathname: id ? `/notes/${id}` : '/notes',
       search: search ? `?${search}` : '',
-    });
+    }, { state: { showList: !id } });
   };
 
   const afterDelete = (deletedId: string) => {

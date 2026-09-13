@@ -8,6 +8,23 @@ const options: AppSelectOption[] = [
 ];
 
 describe("AppSelect", () => {
+  it("reste dans la zone visible quand le clavier réduit et décale le viewport", () => {
+    const position = selectMenuPosition(
+      { left: 16, top: 400, bottom: 444, width: 340 }, 390, 350, 24, 0, 150,
+    );
+    expect(position.placement).toBe('top');
+    expect(position.top).toBeGreaterThanOrEqual(158);
+    expect(position.top + position.maxHeight).toBeLessThanOrEqual(492);
+    expect(position.left + position.width).toBeLessThanOrEqual(382);
+  });
+
+  it("ne déborde pas d’un viewport très court", () => {
+    const position = selectMenuPosition(
+      { left: 8, top: 300, bottom: 344, width: 340 }, 375, 120, 20, 0, 280,
+    );
+    expect(position.top).toBeGreaterThanOrEqual(288);
+    expect(position.top + position.maxHeight).toBeLessThanOrEqual(392);
+  });
   it("navigue dans les deux sens en ignorant les options désactivées", () => {
     expect(nextEnabledOption(options, 0, 1)).toBe(2);
     expect(nextEnabledOption(options, 2, 1)).toBe(0);

@@ -7,10 +7,12 @@ import {
   UserRound,
   Users,
 } from 'lucide-react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useLayoutEffect } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppData } from '../../app/AppDataProvider';
 import { dateLabel } from '../../lib/format';
 import { logicalDayKey } from '../../lib/habits';
+import { useMobileViewport } from './useMobileViewport';
 
 const navigation = [
   { to: '/', label: 'Accueil', icon: LayoutDashboard },
@@ -21,6 +23,11 @@ const navigation = [
 ];
 
 export function AppShell({ onSignOut }: { onSignOut: () => void }) {
+  useMobileViewport();
+  const { pathname } = useLocation();
+  useLayoutEffect(() => {
+    if (window.matchMedia('(max-width: 850px)').matches) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [pathname]);
   const { error, refresh, saving, settings } = useAppData();
   const navigate = useNavigate();
   const day = logicalDayKey(

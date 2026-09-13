@@ -427,7 +427,7 @@ export function SessionForm({
         </div>
       ) : (
         <>
-          <div className="field-row">
+          <div className="field-row duration-fields">
             <Field label="Heures">
               <input
                 inputMode="numeric"

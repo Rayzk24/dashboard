@@ -63,6 +63,7 @@ export function HabitsPage() {
           <div className="week-actions">
             <button
               className="icon-button"
+              aria-label="Semaine précédente"
               onClick={() => setWeek(addDays(week, -7))}
             >
               <ChevronLeft size={18} />
@@ -75,13 +76,14 @@ export function HabitsPage() {
             </button>
             <button
               className="icon-button"
+              aria-label="Semaine suivante"
               onClick={() => setWeek(addDays(week, 7))}
             >
               <ChevronRight size={18} />
             </button>
           </div>
         </header>
-        <div className="weekly-scroll">
+        <div className="weekly-scroll" role="region" aria-label="Semaine d’habitudes, défilement horizontal" tabIndex={0}>
           <div
             className="weekly-grid"
             style={{
@@ -279,6 +281,8 @@ function HabitWeekRow({
         return (
           <button
             className={`week-cell ${scheduled ? "" : "not-due"} ${entry?.completed ? "complete" : ""} ${date === selected ? "selected" : ""}`}
+            aria-label={`${habit.name} · ${date}`}
+            aria-pressed={Boolean(entry?.completed)}
             disabled={!scheduled}
             key={`${habit.id}-${date}`}
             onClick={() => {

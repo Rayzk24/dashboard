@@ -1,4 +1,5 @@
 import { Inbox, X } from "lucide-react";
+import { createPortal } from "react-dom";
 import {
   useEffect,
   useRef,
@@ -13,6 +14,10 @@ type ModalProps = {
   initialFocusRef?: RefObject<HTMLElement | null>;
 };
 
+let openModals = 0;
+let previousBodyOverflow = '';
+let previousRootOverflow = '';
+
 export function Modal({
   title,
   children,
@@ -20,6 +25,7 @@ export function Modal({
   initialFocusRef,
 }: ModalProps) {
   const closeButton = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -27,6 +33,13 @@ export function Modal({
   }, [onClose]);
 
   useEffect(() => {
+    if (openModals++ === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      previousRootOverflow = document.documentElement.style.overflow;
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.setAttribute('data-modal-open', '');
+    }
     const opener =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
@@ -34,22 +47,43 @@ export function Modal({
     (initialFocusRef?.current ?? closeButton.current)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      const dialogs = document.querySelectorAll('[role="dialog"]');
+      if (dialogs[dialogs.length - 1] !== panelRef.current || event.defaultPrevented) return;
       if (event.key === "Escape") onCloseRef.current();
+      if (event.key !== 'Tab' || document.querySelector('.app-select-menu')) return;
+      const focusable = Array.from(panelRef.current?.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]',
+      ) ?? []).filter((element) => element.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
       window.removeEventListener("keydown", onKeyDown);
+      if (--openModals === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+        document.documentElement.style.overflow = previousRootOverflow;
+        document.documentElement.removeAttribute('data-modal-open');
+      }
       if (opener?.isConnected) opener.focus();
     };
   }, [initialFocusRef]);
 
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       role="presentation"
-      onMouseDown={() => onCloseRef.current()}
+      onMouseDown={(event) => { if (event.target === event.currentTarget) onCloseRef.current(); }}
     >
       <section
+        ref={panelRef}
         className="modal-panel"
         aria-modal="true"
         aria-label={title}
@@ -70,7 +104,8 @@ export function Modal({
         </header>
         {children}
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
