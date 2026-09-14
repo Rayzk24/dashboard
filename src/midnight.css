@@ -2818,6 +2818,62 @@ main .text-red-700 {
   line-height: 1.55;
 }
 
+.note-rich-editor .tiptap .note-code-block {
+  position: relative;
+  max-width: 100%;
+  margin: 1em 0;
+}
+
+.note-rich-editor .tiptap .note-code-block pre {
+  margin: 0;
+  padding-top: 46px;
+}
+
+.note-code-copy {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  display: inline-flex;
+  min-width: 68px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  background: rgba(24, 24, 30, 0.9);
+  color: var(--text-secondary);
+  font: 600 11px/1 var(--font-sans);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+
+.note-code-copy:hover,
+.note-code-copy:focus-visible {
+  border-color: rgba(10, 132, 255, 0.3);
+  background: rgba(10, 132, 255, 0.12);
+  color: #8bc1ff;
+}
+
+.note-code-copy:focus-visible {
+  outline: 2px solid rgba(10, 132, 255, 0.5);
+  outline-offset: 2px;
+}
+
+.note-code-copy.copied {
+  color: #8bc1ff;
+}
+
+.note-cleanup-feedback {
+  flex: 0 0 auto;
+  margin-left: 5px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .note-rich-editor .tiptap pre code {
   padding: 0;
   border: 0;

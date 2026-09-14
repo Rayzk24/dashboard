@@ -8,6 +8,7 @@ import {
   Italic,
   Link2,
   List,
+  ListX,
   ListOrdered,
   Redo2,
   RemoveFormatting,
@@ -15,10 +16,11 @@ import {
   Undo2,
 } from 'lucide-react';
 import { EditorContent, useEditor } from '@tiptap/react';
-import { useEffect, useReducer } from 'react';
+import { useEffect, useReducer, useRef, useState } from 'react';
 import type { JSONContent } from '@tiptap/core';
 import type { NoteDocument } from '../../types/domain';
 import { normalizeNoteHref, noteEditorExtensions } from './noteEditorConfig';
+import { completedTaskCount, removeCompletedTasks } from './completedTasks';
 
 export type NoteEditorValue = {
   content: NoteDocument;
@@ -50,6 +52,8 @@ export function RichNoteEditor({
       }),
   });
   const [, refreshToolbar] = useReducer((value) => value + 1, 0);
+  const [cleanupFeedback, setCleanupFeedback] = useState('');
+  const feedbackTimer = useRef<number | null>(null);
 
   useEffect(() => {
     if (!editor) return;
@@ -61,6 +65,10 @@ export function RichNoteEditor({
       editor.off('transaction', refresh);
     };
   }, [editor]);
+
+  useEffect(() => () => {
+    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+  }, []);
 
   if (!editor) return <div className="note-editor-loading">Préparation de l’éditeur…</div>;
 
@@ -79,6 +87,22 @@ export function RichNoteEditor({
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: normalized }).run();
   };
+
+  const removeCheckedTasks = () => {
+    const currentDocument = editor.getJSON();
+    const result = removeCompletedTasks(currentDocument);
+    const changed = JSON.stringify(result.document) !== JSON.stringify(currentDocument);
+    if (!changed) return;
+    editor.commands.setContent(result.document, { emitUpdate: true });
+    editor.commands.focus();
+    setCleanupFeedback(result.removed
+      ? `${result.removed} tâche${result.removed > 1 ? 's' : ''} supprimée${result.removed > 1 ? 's' : ''}`
+      : 'Checklist mise à jour');
+    if (feedbackTimer.current !== null) window.clearTimeout(feedbackTimer.current);
+    feedbackTimer.current = window.setTimeout(() => setCleanupFeedback(''), 2200);
+  };
+
+  const checkedTasks = completedTaskCount(editor.getJSON());
 
   return (
     <div
@@ -100,6 +124,7 @@ export function RichNoteEditor({
         <Tool label="Liste à puces" active={editor.isActive('bulletList')} onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={17} /></Tool>
         <Tool label="Liste numérotée" active={editor.isActive('orderedList')} onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={17} /></Tool>
         <Tool label="Checklist" active={editor.isActive('taskList')} onClick={() => editor.chain().focus().toggleTaskList().run()}><CheckSquare2 size={17} /></Tool>
+        <Tool label="Supprimer les tâches terminées" disabled={checkedTasks === 0} onClick={removeCheckedTasks}><ListX size={17} /></Tool>
         <Tool label="Code en ligne" active={editor.isActive('code')} onClick={() => editor.chain().focus().toggleCode().run()}><Code2 size={17} /></Tool>
         <Tool label="Bloc de code" active={editor.isActive('codeBlock')} onClick={() => editor.chain().focus().toggleCodeBlock().run()}><Braces size={17} /></Tool>
         <Tool label="Lien" active={editor.isActive('link')} onClick={setLink}><Link2 size={17} /></Tool>
@@ -107,6 +132,7 @@ export function RichNoteEditor({
         <span className="note-toolbar-separator" />
         <Tool label="Annuler" disabled={!editor.can().chain().focus().undo().run()} onClick={() => editor.chain().focus().undo().run()}><Undo2 size={17} /></Tool>
         <Tool label="Rétablir" disabled={!editor.can().chain().focus().redo().run()} onClick={() => editor.chain().focus().redo().run()}><Redo2 size={17} /></Tool>
+        {cleanupFeedback ? <span className="note-cleanup-feedback" role="status">{cleanupFeedback}</span> : null}
       </div>
       <EditorContent editor={editor} />
     </div>

@@ -2,6 +2,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import TaskItem from '@tiptap/extension-task-item';
 import TaskList from '@tiptap/extension-task-list';
 import StarterKit from '@tiptap/starter-kit';
+import { CodeBlockWithCopy } from './CodeBlockWithCopy';
 import { HexColorPreview } from './HexColorExtension';
 import { NoteIndentation } from './NoteIndentation';
 
@@ -47,7 +48,9 @@ export function noteEditorExtensions(withPlaceholder = true) {
     StarterKit.configure({
       heading: { levels: [1, 2] },
       link: noteLinkOptions,
+      codeBlock: false,
     }),
+    CodeBlockWithCopy,
     TaskList,
     TaskItem.configure({ nested: true }),
     ...(withPlaceholder

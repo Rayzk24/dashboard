@@ -2,6 +2,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Editor } from '@tiptap/core';
 import { noteIndentationLimit } from './NoteIndentation';
+import { completedTaskCount, removeCompletedTasks } from './completedTasks';
 import { normalizeNoteHref, noteEditorExtensions } from './noteEditorConfig';
 
 const editors: Editor[] = [];
@@ -245,5 +246,93 @@ describe('éditeur de notes', () => {
     expect(editor.view.dom.querySelectorAll('.note-hex-preview')).toHaveLength(0);
     editor.commands.setContent('<ul data-type="taskList"><li data-type="taskItem" data-checked="false"><p>#30D158</p></li></ul>');
     expect(editor.view.dom.querySelectorAll('.note-hex-preview')).toHaveLength(1);
+  });
+
+  it('copie tout le texte d’un bloc de code depuis son bouton discret', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText },
+    });
+    const editor = editorWith('<pre><code>const answer = 42;\nconsole.log(answer);</code></pre>');
+
+    await vi.waitFor(() => expect(editor.view.dom.querySelector('.note-code-copy')).not.toBeNull());
+    const button = editor.view.dom.querySelector('.note-code-copy') as HTMLButtonElement;
+    button.click();
+
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('const answer = 42;\nconsole.log(answer);'));
+    await vi.waitFor(() => expect(button.textContent).toContain('Copié'));
+  });
+
+  it('nettoie les tâches terminées sans perdre les sous-tâches restantes', () => {
+    const editor = editorWith(`
+      <ul data-type="taskList">
+        <li data-type="taskItem" data-checked="true"><p>Parent</p>
+          <ul data-type="taskList">
+            <li data-type="taskItem" data-checked="true"><p>Sous-tâche terminée</p></li>
+            <li data-type="taskItem" data-checked="false"><p>Sous-tâche restante</p></li>
+          </ul>
+        </li>
+        <li data-type="taskItem" data-checked="true"><p>Tâche terminée</p></li>
+        <li data-type="taskItem" data-checked="false"><p>Tâche restante</p></li>
+      </ul>
+    `);
+    expect(completedTaskCount(editor.getJSON())).toBe(3);
+
+    const result = removeCompletedTasks(editor.getJSON());
+    expect(result.removed).toBe(2);
+    editor.commands.setContent(result.document, { emitUpdate: true });
+
+    const json = JSON.stringify(editor.getJSON());
+    expect(json).toContain('Parent');
+    expect(json).toContain('Sous-tâche restante');
+    expect(json).toContain('Tâche restante');
+    expect(json).not.toContain('Sous-tâche terminée');
+    expect(json).not.toContain('Tâche terminée');
+    expect(firstListItems(editor)[0]?.attrs?.checked).toBe(false);
+  });
+
+  it('retire une branche entièrement terminée et permet d’annuler le nettoyage', () => {
+    const editor = editorWith(`
+      <ul data-type="taskList">
+        <li data-type="taskItem" data-checked="true"><p>Branche terminée</p>
+          <ul data-type="taskList">
+            <li data-type="taskItem" data-checked="true"><p>Enfant terminé</p></li>
+          </ul>
+        </li>
+        <li data-type="taskItem" data-checked="false"><p>À conserver</p></li>
+      </ul>
+    `);
+    const before = editor.getJSON();
+    const result = removeCompletedTasks(before);
+    expect(result.removed).toBe(2);
+    editor.commands.setContent(result.document, { emitUpdate: true });
+    expect(editor.getText().trim()).toBe('À conserver');
+
+    editor.commands.undo();
+    expect(editor.getText()).toContain('Branche terminée');
+    expect(editor.getText()).toContain('Enfant terminé');
+    expect(editor.getText()).toContain('À conserver');
+  });
+
+  it('préserve une branche visuellement indentée lorsqu’une sous-tâche reste à faire', () => {
+    const editor = editorWith(`
+      <ul data-type="taskList">
+        <li data-type="taskItem" data-checked="true" data-indent-level="0"><p>Parent</p></li>
+        <li data-type="taskItem" data-checked="true" data-indent-level="1"><p>Enfant terminé</p></li>
+        <li data-type="taskItem" data-checked="false" data-indent-level="1"><p>Enfant restant</p></li>
+        <li data-type="taskItem" data-checked="true" data-indent-level="0"><p>Autre terminée</p></li>
+      </ul>
+    `);
+    const result = removeCompletedTasks(editor.getJSON());
+    editor.commands.setContent(result.document, { emitUpdate: true });
+
+    const json = JSON.stringify(editor.getJSON());
+    expect(result.removed).toBe(2);
+    expect(json).toContain('Parent');
+    expect(json).toContain('Enfant restant');
+    expect(json).not.toContain('Enfant terminé');
+    expect(json).not.toContain('Autre terminée');
+    expect(firstListItems(editor)[0]?.attrs?.checked).toBe(false);
   });
 });
