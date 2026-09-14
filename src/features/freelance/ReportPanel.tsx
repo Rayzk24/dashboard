@@ -68,13 +68,17 @@ function ReportSession({ session, report }: { session: PublicReport['sessions'][
   );
 }
 
-export function ReportDocument({ report }: { report: PublicReport }) {
-  const groups = report.sessions.reduce<Array<{ key: string; label: string; sessions: PublicReport['sessions'] }>>((result, session) => {
+function groupReportSessions(sessions: PublicReport['sessions']) {
+  return sessions.reduce<Array<{ key: string; label: string; sessions: PublicReport['sessions'] }>>((result, session) => {
     const current = result.at(-1);
     if (current?.key === session.dateKey) current.sessions.push(session);
     else result.push({ key: session.dateKey, label: session.date, sessions: [session] });
     return result;
   }, []);
+}
+
+export function ReportDocument({ report }: { report: PublicReport }) {
+  const groups = groupReportSessions(report.sessions);
 
   return (
     <Document title={`Rapport d’activité - ${report.client}`} author={report.issuer}>
@@ -149,6 +153,7 @@ export function ReportPanel({ clientId, projectId }: { clientId: string; project
   const report = useMemo(() => client ? buildPublicReport(settings, client, project, picked, {
     period: reportPeriodLabel(picked, from, to), includeDurations: durations, includeRate: rate, includeAmounts: amounts,
   }) : null, [amounts, client, durations, from, picked, project, rate, settings, to]);
+  const previewGroups = useMemo(() => groupReportSessions(report?.sessions ?? []), [report?.sessions]);
 
   if (!client || !report) return null;
   const toggle = (id: string) => setSelected((current) => {
@@ -178,17 +183,51 @@ export function ReportPanel({ clientId, projectId }: { clientId: string; project
         <Toggle checked={rate} onChange={setRate} label="Afficher le tarif horaire appliqué" detail="Ajoute le tarif utilisé à côté de chaque session." />
         <Toggle checked={amounts} onChange={setAmounts} label="Afficher le montant de chaque session" />
       </div>
-      <div className="report-preview">
-        <p className="eyebrow">Aperçu avant génération</p><strong>{report.issuer} · {report.site}</strong>
-        <p>{report.client}{report.project ? ` · ${report.project}` : ''} · {report.period}</p>
-        {report.sessions.map((item) => <p key={item.id}><b>{item.date} · {item.title}</b>{item.description ? <> · {item.description}</> : null} {durations ? `· ${item.duration}` : ''}{amounts ? ` · ${euro(item.amount)}` : ''}</p>)}
-        <p><b>{report.sessions.length} session(s) · {report.totalDuration}{amounts ? ` · ${euro(report.total)}` : ''}</b></p>
+      <div className="report-preview" aria-label="Aperçu du rapport PDF">
+        <div className="report-preview-topbar">
+          <span className="report-preview-brand"><b>R<span>.</span></b> Rayzk</span>
+          <span>{report.site}</span>
+        </div>
+        <div className="report-preview-heading">
+          <span>APERÇU DU RAPPORT</span>
+          <strong>{report.client}</strong>
+          {report.project ? <b>{report.project}</b> : null}
+          <small>{report.period}</small>
+        </div>
+        <div className={`report-preview-summary ${amounts ? '' : 'two'}`}>
+          <span><strong>{report.sessions.length}</strong><small>Sessions</small></span>
+          <span><strong>{report.totalDuration}</strong><small>Temps travaillé</small></span>
+          {amounts ? <span><strong>{euro(report.total)}</strong><small>Valeur totale</small></span> : null}
+        </div>
+        <div className="report-preview-sessions">
+          {previewGroups.length ? previewGroups.map((group) => (
+            <section className="report-preview-day" key={group.key}>
+              <h5>{group.label}</h5>
+              {group.sessions.map((item) => {
+                const details = [
+                  durations ? item.duration : '',
+                  rate ? `${euro(item.rate)} / h` : '',
+                ].filter(Boolean).join(' · ');
+                return (
+                  <article className="report-preview-session" key={item.id}>
+                    <strong>{item.title}</strong>
+                    {item.project ? <small className="report-preview-project">{item.project}</small> : null}
+                    {item.description ? <p>{item.description}</p> : null}
+                    {(details || amounts) ? (
+                      <div><small>{details}</small>{amounts ? <b>{euro(item.amount)}</b> : null}</div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </section>
+          )) : <p className="report-preview-empty">Sélectionnez au moins une session pour prévisualiser le rapport.</p>}
+        </div>
       </div>
-      {picked.length > 0 ? <PDFDownloadLink document={<ReportDocument report={report} />} fileName={reportFileName(client.name)} className="button primary">{({ loading }) => <><FileDown size={16} /> {loading ? 'Préparation…' : 'Télécharger le PDF'}</>}</PDFDownloadLink> : null}
+      {picked.length > 0 ? <PDFDownloadLink document={<ReportDocument report={report} />} fileName={reportFileName(client.name)} className="button primary report-download">{({ loading }) => <><FileDown size={16} /> {loading ? 'Préparation…' : 'Télécharger le PDF'}</>}</PDFDownloadLink> : null}
     </section>
   );
 }
 
 function Toggle({ checked, onChange, label, detail }: { checked: boolean; onChange: (value: boolean) => void; label: string; detail?: string }) {
-  return <button className={`custom-toggle ${checked ? 'selected' : ''}`} onClick={() => onChange(!checked)}><i /><span><b>{label}</b>{detail ? <small>{detail}</small> : null}</span></button>;
+  return <button type="button" role="checkbox" aria-checked={checked} className={`custom-toggle ${checked ? 'selected' : ''}`} onClick={() => onChange(!checked)}><i aria-hidden="true" /><span><b>{label}</b>{detail ? <small>{detail}</small> : null}</span></button>;
 }

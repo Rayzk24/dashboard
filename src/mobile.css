@@ -127,7 +127,12 @@
   .report-session-choice { min-width: 0; gap: 10px; line-height: 1.5; }
   .report-session-choice > span { min-width: 0; overflow-wrap: anywhere; }
   .report-select-actions { flex-wrap: wrap; gap: 5px 14px; }
-  .report-preview { padding: 13px; overflow-wrap: anywhere; }
+  .report-preview { padding: 0; overflow-wrap: anywhere; }
+  .report-preview-topbar, .report-preview-heading { padding-inline: 14px; }
+  .report-preview-summary { margin-inline: 14px; }
+  .report-preview-summary > span { padding-inline: 8px; }
+  .report-preview-sessions { max-height: 270px; padding-inline: 14px; }
+  .report-download { width: 100%; }
   .app-select-menu { overscroll-behavior: contain; }
   .app-select-option { min-height: 46px; height: auto; }
   .app-select-option > span { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
