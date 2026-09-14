@@ -6,6 +6,7 @@ import {
   buildPublicReport,
   compareReportSessions,
   defaultReportSessionIds,
+  reportFileName,
   reportPeriodLabel,
   type PublicReport,
 } from '../../lib/report';
@@ -183,7 +184,7 @@ export function ReportPanel({ clientId, projectId }: { clientId: string; project
         {report.sessions.map((item) => <p key={item.id}><b>{item.date} · {item.title}</b>{item.description ? <> · {item.description}</> : null} {durations ? `· ${item.duration}` : ''}{amounts ? ` · ${euro(item.amount)}` : ''}</p>)}
         <p><b>{report.sessions.length} session(s) · {report.totalDuration}{amounts ? ` · ${euro(report.total)}` : ''}</b></p>
       </div>
-      {picked.length > 0 ? <PDFDownloadLink document={<ReportDocument report={report} />} fileName={`rapport-${client.name.toLowerCase().replace(/\s+/g, '-')}.pdf`} className="button primary">{({ loading }) => <><FileDown size={16} /> {loading ? 'Préparation…' : 'Télécharger le PDF'}</>}</PDFDownloadLink> : null}
+      {picked.length > 0 ? <PDFDownloadLink document={<ReportDocument report={report} />} fileName={reportFileName(client.name)} className="button primary">{({ loading }) => <><FileDown size={16} /> {loading ? 'Préparation…' : 'Télécharger le PDF'}</>}</PDFDownloadLink> : null}
     </section>
   );
 }

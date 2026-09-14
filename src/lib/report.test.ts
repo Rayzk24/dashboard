@@ -4,6 +4,7 @@ import {
   buildPublicReport,
   compareReportSessions,
   defaultReportSessionIds,
+  reportFileName,
   reportPeriodLabel,
 } from './report';
 
@@ -75,5 +76,10 @@ describe('rapport client', () => {
       duration: '1 h 00',
       amount: 12,
     });
+  });
+
+  it('ajoute la date locale de génération au nom du fichier', () => {
+    expect(reportFileName('EvoBlock', new Date(2026, 8, 14, 23, 30)))
+      .toBe('rapport-evoblock-2026-09-14.pdf');
   });
 });

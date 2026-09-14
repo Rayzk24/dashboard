@@ -69,6 +69,15 @@ export function reportPeriodLabel(sessions: WorkSession[], from = '', to = '') {
   return `${startDay} ${monthName(start)} - ${longDate(end)}`;
 }
 
+export function reportFileName(clientName: string, generatedAt = new Date()) {
+  const date = [
+    generatedAt.getFullYear(),
+    String(generatedAt.getMonth() + 1).padStart(2, '0'),
+    String(generatedAt.getDate()).padStart(2, '0'),
+  ].join('-');
+  return `rapport-${clientName.toLowerCase().replace(/\s+/g, '-')}-${date}.pdf`;
+}
+
 export function buildPublicReport(
   settings: Settings | null,
   client: Client,
