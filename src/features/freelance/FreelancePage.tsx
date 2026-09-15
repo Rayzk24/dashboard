@@ -801,7 +801,7 @@ function SessionsModal({
   const missions = projectsForClient(client.id, data.projects);
   return (
     <Modal title={`Sessions · ${client.name}`} onClose={onClose}>
-      <div className="filter-row">
+      <div className="filter-row session-filter-tabs">
         <button
           className={filter === "all" ? "selected" : ""}
           onClick={() => setFilter("all")}

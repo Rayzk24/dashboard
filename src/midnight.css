@@ -604,6 +604,28 @@ button:active,
   padding: 11px 13px;
 }
 
+.field input[type="date"],
+.field input[type="datetime-local"] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  -webkit-min-logical-width: 0;
+}
+
+.field input[type="date"]::-webkit-date-and-time-value,
+.field input[type="datetime-local"]::-webkit-date-and-time-value,
+.field input[type="date"]::-webkit-datetime-edit,
+.field input[type="datetime-local"]::-webkit-datetime-edit {
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
 .field input::placeholder,
 .field textarea::placeholder {
   color: var(--text-tertiary);
@@ -846,6 +868,24 @@ button:active,
   box-shadow:
     0 3px 12px rgba(0, 0, 0, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.session-filter-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.session-filter-tabs button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 8px;
+  text-align: center;
 }
 
 .duration-presets {
@@ -1510,6 +1550,12 @@ button:active,
 
 /* Status and reports */
 .status-pill {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
   border: 1px solid var(--line-soft);
   background: rgba(255, 255, 255, 0.055);
   color: var(--text-secondary);
@@ -1803,7 +1849,18 @@ button:active,
 }
 
 .secondary-filters > summary + .field {
-  margin-top: 10px;
+  margin-top: 12px;
+}
+
+.secondary-filters > .field-row {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+.secondary-filters > .field-row > .field {
+  min-width: 0;
 }
 
 /* Purchases */

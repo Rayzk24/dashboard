@@ -51,6 +51,17 @@
     inline-size: 100%;
     max-inline-size: 100%;
     min-inline-size: 0;
+    -webkit-min-logical-width: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="datetime-local"]::-webkit-date-and-time-value,
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="datetime-local"]::-webkit-datetime-edit {
+    min-width: 0;
+    padding: 0;
+    text-align: left;
   }
   input, textarea, [contenteditable="true"] { scroll-margin-block: 78px 90px; }
   .button, .icon-button, .mobile-back, .mobile-settings, .app-select-trigger,
@@ -111,7 +122,7 @@
   .session-row-v051 > div:last-child { max-width: 100%; min-width: 0; }
   .session-row-v051 .status-pill { white-space: normal; text-align: center; }
   .detail-payment .status-pill {
-    width: fit-content;
+    width: max-content;
     max-width: 100%;
     justify-self: start;
     white-space: nowrap;
@@ -209,7 +220,27 @@
 
 @media (max-width: 560px) {
   .month-grid { margin-inline: -6px; }
-  .home-finance .metric:last-child, .client-workspace-v051 > .metric-grid.three > .metric:last-child { grid-column: 1 / -1; }
+  .home-finance .metric:last-child { grid-column: 1 / -1; }
+  .client-workspace-v051 > .metric-grid.three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .client-workspace-v051 > .metric-grid.three > .metric {
+    min-height: 92px;
+    padding: 11px 9px;
+  }
+  .client-workspace-v051 > .metric-grid.three > .metric span {
+    line-height: 1.25;
+  }
+  .client-workspace-v051 > .metric-grid.three > .metric strong {
+    font-size: clamp(17px, 4.6vw, 20px);
+  }
+  .session-filter-tabs {
+    gap: 3px;
+  }
+  .session-filter-tabs button {
+    padding-inline: 4px;
+    font-size: 11px;
+  }
   .purchase-actions { grid-template-columns: minmax(0, 1fr) repeat(3, 44px); }
   .purchase-actions:not(:has(a)) { grid-template-columns: minmax(0, 1fr) repeat(2, 44px); }
   .habit-manage-row > span { flex-basis: 100%; }
