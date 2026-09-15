@@ -1097,6 +1097,12 @@ button:active,
   letter-spacing: -0.045em;
 }
 
+.metric.wrap-value strong {
+  line-height: 1.18;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
 .metric.amber,
 .metric.green,
 .metric.brick {
@@ -1791,6 +1797,13 @@ button:active,
 
 .secondary-filters summary {
   color: #65adff;
+  min-height: 24px;
+  margin: 0;
+  line-height: 24px;
+}
+
+.secondary-filters > summary + .field {
+  margin-top: 10px;
 }
 
 /* Purchases */
@@ -3887,6 +3900,10 @@ main .text-red-700 {
   color: var(--text-tertiary);
   font-size: 9px;
   white-space: nowrap;
+}
+
+.analytics-bar-value-compact {
+  display: none;
 }
 
 .analytics-bar-track {

@@ -37,7 +37,21 @@
   /* 16px avoids Safari's input focus zoom, without disabling pinch zoom. */
   .field input, .field textarea, .notes-search input, .login-form input,
   .password-field input { font-size: 16px; max-width: 100%; min-width: 0; }
-  input[type="date"], input[type="datetime-local"] { min-width: 0; width: 100%; }
+  .field-row, .field-row > .field {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  input[type="date"], input[type="datetime-local"] {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
   input, textarea, [contenteditable="true"] { scroll-margin-block: 78px 90px; }
   .button, .icon-button, .mobile-back, .mobile-settings, .app-select-trigger,
   .filter-tabs button, .filter-row button, .notes-filters button,
@@ -61,6 +75,10 @@
     overflow-wrap: normal;
     word-break: normal;
     font-variant-numeric: tabular-nums;
+  }
+  .metric.wrap-value strong {
+    white-space: normal;
+    line-height: 1.18;
   }
   .check-row { min-height: 50px; height: auto; text-align: left; overflow-wrap: anywhere; }
   .home-session-openable { min-height: 58px; padding-block: 13px; overflow-wrap: anywhere; }
@@ -92,6 +110,12 @@
   .session-row-v051 > div:first-child { flex: 1 1 180px; min-width: 0; }
   .session-row-v051 > div:last-child { max-width: 100%; min-width: 0; }
   .session-row-v051 .status-pill { white-space: normal; text-align: center; }
+  .detail-payment .status-pill {
+    width: fit-content;
+    max-width: 100%;
+    justify-self: start;
+    white-space: nowrap;
+  }
   .session-title-button { min-height: 44px; display: block; }
   .payment-history-row, .allocation-row { gap: 9px; }
   .payment-history-row > span, .allocation-row > span { min-width: 0; flex: 1 1 auto; }
@@ -193,16 +217,35 @@
   .analytics-bars {
     min-width: 0;
     gap: 4px;
+    padding-inline: 9px;
+  }
+  .analytics-chart-scroll {
+    overflow-x: visible;
   }
   .analytics-bar-column {
     min-width: 0;
     flex: 1 1 0;
+    grid-template-rows: 34px minmax(0, 1fr) 21px;
   }
   .analytics-bar-value {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 8px;
+    justify-self: center;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: clamp(7.5px, 2.15vw, 9px);
+    line-height: 1;
+  }
+  .analytics-bar-column:nth-child(odd) .analytics-bar-value {
+    align-self: start;
+  }
+  .analytics-bar-column:nth-child(even) .analytics-bar-value {
+    align-self: end;
+  }
+  .analytics-bar-value-full {
+    display: none;
+  }
+  .analytics-bar-value-compact {
+    display: inline;
   }
   .analytics-bar-column > small {
     min-width: 0;

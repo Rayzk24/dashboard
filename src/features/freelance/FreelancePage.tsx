@@ -220,6 +220,7 @@ export function FreelancePage() {
           <Metric
             label="Actifs"
             value={`${summary.activeClients} clients · ${summary.activeMissions} missions`}
+            wrapValue
           />
         </div>
       </section>
@@ -992,13 +993,15 @@ function Metric({
   label,
   value,
   tone = "",
+  wrapValue = false,
 }: {
   label: string;
   value: string;
   tone?: string;
+  wrapValue?: boolean;
 }) {
   return (
-    <div className={`metric ${tone}`}>
+    <div className={`metric ${tone} ${wrapValue ? "wrap-value" : ""}`}>
       <span>{label}</span>
       <strong>{value}</strong>
     </div>

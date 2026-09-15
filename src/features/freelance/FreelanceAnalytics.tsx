@@ -39,6 +39,16 @@ function comparisonTone(current: number, previous: number) {
   return current > previous ? 'up' : current < previous ? 'down' : 'stable';
 }
 
+function compactChartValue(value: number, mode: ChartMode) {
+  if (mode === 'time') return minutesLabel(Math.round(value));
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 export function FreelanceAnalytics({
   sessions,
   period,
@@ -153,10 +163,14 @@ export function FreelanceAnalytics({
               {points.map((point, index) => {
                 const value = values[index];
                 const display = chartMode === 'value' ? euro(value) : minutesLabel(value);
+                const compactDisplay = compactChartValue(value, chartMode);
                 const height = maximum && value ? Math.max(4, (value / maximum) * 100) : 2;
                 return (
                   <div className="analytics-bar-column" key={point.key} title={`${point.label} · ${display}`}>
-                    <span className="analytics-bar-value">{value ? display : '—'}</span>
+                    <span className="analytics-bar-value">
+                      <span className="analytics-bar-value-full">{value ? display : '—'}</span>
+                      <span className="analytics-bar-value-compact">{value ? compactDisplay : '—'}</span>
+                    </span>
                     <span className="analytics-bar-track">
                       <i style={{ height: `${height}%` }} />
                     </span>
