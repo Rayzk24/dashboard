@@ -9,6 +9,8 @@ export function useMobileViewport() {
     let frame = 0;
     const update = () => {
       frame = 0;
+      root.style.setProperty('--visible-width', `${viewport.width}px`);
+      root.style.setProperty('--visible-left', `${viewport.offsetLeft}px`);
       root.style.setProperty('--visible-height', `${viewport.height}px`);
       root.style.setProperty('--visible-top', `${viewport.offsetTop}px`);
       const editing = document.activeElement?.matches('input, textarea, [contenteditable="true"]');
@@ -29,6 +31,8 @@ export function useMobileViewport() {
       viewport.removeEventListener('scroll', schedule);
       document.removeEventListener('focusin', schedule);
       document.removeEventListener('focusout', schedule);
+      root.style.removeProperty('--visible-width');
+      root.style.removeProperty('--visible-left');
       root.style.removeProperty('--visible-height');
       root.style.removeProperty('--visible-top');
       root.removeAttribute('data-mobile-keyboard');

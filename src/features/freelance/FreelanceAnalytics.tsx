@@ -147,7 +147,6 @@ export function FreelanceAnalytics({
           <div className="analytics-chart-scroll">
             <div
               className="analytics-bars"
-              style={{ minWidth: `max(100%, ${points.length * 54}px)` }}
               role="img"
               aria-label={`Évolution de ${chartMode === 'value' ? 'la valeur nette' : 'la durée travaillée'}`}
             >
