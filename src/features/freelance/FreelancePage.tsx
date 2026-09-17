@@ -134,7 +134,6 @@ export function FreelancePage() {
     data.clients,
     data.projects,
     scoped.sessions,
-    scoped.payments,
     data.allocations,
   );
   const selectClient = (id: string) => {
@@ -244,7 +243,6 @@ export function FreelancePage() {
               const pending = clientSummary(
                 item.id,
                 data.sessions,
-                data.payments,
                 data.allocations,
               ).remaining;
               return (
@@ -440,7 +438,6 @@ function ClientWorkspace({
   const summary = clientSummary(
     client.id,
     sessions,
-    scoped.payments,
     data.allocations,
   );
   const recent = sessions
@@ -894,7 +891,6 @@ function MissionRow({
   const summary = clientSummary(
     client.id,
     sessions,
-    data.payments.filter((item) => item.project_id === mission.id),
     data.allocations,
   );
   const status = missionStatusPresentation(mission.status);
@@ -1011,10 +1007,9 @@ function globalSummary(
   clients: Client[],
   projects: Project[],
   sessions: WorkSession[],
-  payments: Payment[],
   allocations: ReturnType<typeof useAppData>["allocations"],
 ) {
-  const totals = financialSummary(sessions, payments, allocations);
+  const totals = financialSummary(sessions, allocations);
   return {
     ...totals,
     activeClients: clients.filter((item) => item.status === "active").length,

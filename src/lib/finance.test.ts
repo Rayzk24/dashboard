@@ -24,7 +24,7 @@ describe('règles freelance', () => {
     const later = { ...session, id: 'later', project_id: 'other-project', session_date: '2026-07-16', commission_amount: 5, created_at: '2026-07-16T10:00:00Z' };
     expect(globalCommissionUsed([later, current, withoutMission, first], current.session_date, current)).toBe(38);
   });
-  it('centralise le travail net valorisé, reçu, attribué et à recevoir', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 10 }] as PaymentAllocation[]; const payment = paymentOf('p1', 10, '2026-07-15'); expect(allocationTotal('s1', allocations)).toBe(10); expect(remainingForSession(session, allocations)).toBe(14); expect(clientSummary('c1', [session], [payment], allocations)).toMatchObject({ generated: 24, received: 10, covered: 10, remaining: 14 }); expect(financialSummary([session], [payment], allocations)).toMatchObject({ valued: 24, received: 10, allocated: 10, remaining: 14 }); });
+  it('centralise le travail net valorisé, reçu, attribué et à recevoir', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 10 }] as PaymentAllocation[]; expect(allocationTotal('s1', allocations)).toBe(10); expect(remainingForSession(session, allocations)).toBe(14); expect(clientSummary('c1', [session], allocations)).toMatchObject({ generated: 24, received: 10, covered: 10, remaining: 14 }); expect(financialSummary([session], allocations)).toMatchObject({ valued: 24, received: 10, allocated: 10, remaining: 14 }); });
   it('protège une session déjà attribuée et expose le montant non attribué', () => { const allocations = [{ id: 'a1', user_id: 'u1', payment_id: 'p1', work_session_id: 's1', allocated_amount: 12 }] as PaymentAllocation[]; const payment = paymentOf('p1', 20, '2026-07-15'); expect(canSetSessionAmount(11, allocationTotal('s1', allocations))).toBe(false); expect(canSetSessionAmount(12, allocationTotal('s1', allocations))).toBe(true); expect(paymentBreakdown(payment, allocations)).toEqual({ allocated: 12, unallocated: 8 }); });
   it('reconstruit les allocations nettes dans un ordre stable par règlement puis session', () => { const old = { ...session, id: 's-old', session_date: '2026-07-01', gross_amount: 12.5, net_amount: 10, created_at: '2026-07-01' }; const next = { ...session, id: 's-next', session_date: '2026-07-02', gross_amount: 15, net_amount: 12, created_at: '2026-07-02' }; expect(deterministicAllocationPlan([next, old], [paymentOf('p-later', 9, '2026-07-03'), paymentOf('p-early', 13, '2026-07-01')])).toEqual([{ paymentId: 'p-early', workSessionId: 's-old', amount: 10 }, { paymentId: 'p-early', workSessionId: 's-next', amount: 3 }, { paymentId: 'p-later', workSessionId: 's-next', amount: 9 }]); });
   it('considère une session commissionnée payée dès que son net est couvert', () => {
@@ -65,12 +65,82 @@ describe('périodes financières', () => {
 
     expect(scoped.sessions.map((item) => item.id)).toEqual(['s-week']);
     expect(scoped.payments.map((item) => item.id)).toEqual(['p-week']);
-    expect(financialSummary(scoped.sessions, scoped.payments, [])).toMatchObject({
+    expect(financialSummary(scoped.sessions, [])).toMatchObject({
       valued: 150,
+      received: 0,
+      remaining: 150,
+    });
+  });
+
+  it('répartit une couverture multi-mois selon les sessions, sans déplacer le règlement', () => {
+    const august = { ...session, id: 's-aug', session_date: '2026-08-20', net_amount: 100, gross_amount: 100 };
+    const september = { ...session, id: 's-sep', session_date: '2026-09-10', net_amount: 50, gross_amount: 50 };
+    const payment = paymentOf('p-sep', 150, '2026-09-15');
+    const allocations = [
+      allocationOf('a-aug', payment.id, august.id, 100),
+      allocationOf('a-sep', payment.id, september.id, 50),
+    ];
+    const augustData = financialDataForPeriod(
+      [august, september],
+      [payment],
+      'month',
+      new Date(2026, 7, 15, 12),
+    );
+    const septemberData = financialDataForPeriod(
+      [august, september],
+      [payment],
+      'month',
+      new Date(2026, 8, 15, 12),
+    );
+
+    expect(augustData.payments).toEqual([]);
+    expect(septemberData.payments.map((item) => item.id)).toEqual(['p-sep']);
+    expect(payment.payment_date).toBe('2026-09-15');
+    expect(financialSummary(augustData.sessions, allocations)).toMatchObject({
+      valued: 100,
+      received: 100,
+      remaining: 0,
+    });
+    expect(financialSummary(septemberData.sessions, allocations)).toMatchObject({
+      valued: 50,
+      received: 50,
+      remaining: 0,
+    });
+  });
+
+  it('calcule les règlements partiels et les nouvelles sessions depuis leurs allocations', () => {
+    const covered = { ...session, id: 's-covered', session_date: '2026-09-02', net_amount: 100, gross_amount: 100 };
+    const addedLater = { ...session, id: 's-new', session_date: '2026-09-16', net_amount: 60, gross_amount: 60 };
+    const allocations = [allocationOf('a-partial', 'p-old', covered.id, 40)];
+
+    expect(financialSummary([covered], allocations)).toMatchObject({
+      valued: 100,
       received: 40,
-      remaining: 110,
+      remaining: 60,
+    });
+    expect(financialSummary([covered, addedLater], allocations)).toMatchObject({
+      valued: 160,
+      received: 40,
+      remaining: 120,
+    });
+  });
+
+  it('conserve les valeurs nettes commissionnées et la cohérence client/globale', () => {
+    const commissioned = { ...session, id: 's-commission', net_amount: 28.8, gross_amount: 36, commission_amount: 7.2 };
+    const allocations = [allocationOf('a-commission', 'p-commission', commissioned.id, 28.8)];
+
+    expect(financialSummary([commissioned], allocations)).toMatchObject({
+      valued: 28.8,
+      received: 28.8,
+      remaining: 0,
+    });
+    expect(clientSummary('c1', [commissioned], allocations)).toMatchObject({
+      generated: 28.8,
+      received: 28.8,
+      remaining: 0,
     });
   });
 });
 
 function paymentOf(id: string, amount: number, date: string): Payment { return { id, user_id: 'u1', client_id: 'c1', project_id: null, payment_date: date, amount_expected: amount, amount_received: amount, fees: 0, payment_method: null, reference_note: '', status: 'paid', created_at: date }; }
+function allocationOf(id: string, paymentId: string, sessionId: string, amount: number): PaymentAllocation { return { id, user_id: 'u1', payment_id: paymentId, work_session_id: sessionId, allocated_amount: amount }; }

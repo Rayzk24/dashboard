@@ -6,8 +6,53 @@ export function sessionAmounts(minutes: number, rate: number, commissionRate = 0
 export function globalCommissionUsed(sessions: WorkSession[], beforeDate: string, currentSession?: WorkSession) { return sessions.filter((item) => item.id !== currentSession?.id && !item.is_running && item.time_category === 'billable').filter((item) => item.session_date < beforeDate || (item.session_date === beforeDate && (!currentSession || item.created_at.localeCompare(currentSession.created_at) < 0 || (item.created_at === currentSession.created_at && item.id.localeCompare(currentSession.id) < 0)))).reduce((sum, item) => sum + Number(item.commission_amount), 0); }
 export function allocationTotal(sessionId: string, allocations: PaymentAllocation[]) { return allocations.filter((item) => item.work_session_id === sessionId).reduce((sum, item) => sum + Number(item.allocated_amount), 0); }
 export function remainingForSession(session: WorkSession, allocations: PaymentAllocation[]) { return Math.max(0, Number(session.net_amount) - allocationTotal(session.id, allocations)); }
-export function clientSummary(clientId: string, sessions: WorkSession[], payments: Payment[], allocations: PaymentAllocation[]) { const relevant = sessions.filter((item) => item.client_id === clientId && !item.is_running && item.time_category === 'billable'); const net = relevant.reduce((sum, item) => sum + Number(item.net_amount), 0); const generated = net; const received = payments.filter((item) => item.client_id === clientId && item.status !== 'cancelled').reduce((sum, item) => sum + Number(item.amount_received), 0); const covered = relevant.reduce((sum, item) => sum + allocationTotal(item.id, allocations), 0); const minutes = relevant.reduce((sum, item) => sum + Number(item.duration_minutes || 0), 0); return { generated, net, received, covered, remaining: Math.max(0, generated - received), minutes, realHourlyRate: minutes ? net / (minutes / 60) : 0 }; }
-export function financialSummary(sessions: WorkSession[], payments: Payment[], allocations: PaymentAllocation[]) { const relevant = sessions.filter((item) => !item.is_running && item.time_category === 'billable'); const valued = relevant.reduce((sum, item) => sum + Number(item.net_amount), 0); const received = payments.filter((item) => item.status !== 'cancelled').reduce((sum, item) => sum + Number(item.amount_received), 0); const allocated = relevant.reduce((sum, item) => sum + allocationTotal(item.id, allocations), 0); return { valued, received, allocated, remaining: Math.max(0, valued - received) }; }
+
+function sessionCoverageSummary(sessions: WorkSession[], allocations: PaymentAllocation[]) {
+  const relevant = sessions.filter(
+    (item) => !item.is_running && item.time_category === 'billable',
+  );
+  return relevant.reduce(
+    (summary, session) => {
+      const value = Math.max(0, Number(session.net_amount));
+      const allocated = Math.max(0, allocationTotal(session.id, allocations));
+      const covered = Math.min(value, allocated);
+      summary.valued += value;
+      summary.received += covered;
+      summary.allocated += allocated;
+      summary.remaining += Math.max(0, value - covered);
+      return summary;
+    },
+    { valued: 0, received: 0, allocated: 0, remaining: 0 },
+  );
+}
+
+export function clientSummary(
+  clientId: string,
+  sessions: WorkSession[],
+  allocations: PaymentAllocation[],
+) {
+  const relevant = sessions.filter((item) => item.client_id === clientId);
+  const coverage = sessionCoverageSummary(relevant, allocations);
+  const minutes = relevant
+    .filter((item) => !item.is_running && item.time_category === 'billable')
+    .reduce((sum, item) => sum + Number(item.duration_minutes || 0), 0);
+  return {
+    generated: coverage.valued,
+    net: coverage.valued,
+    received: coverage.received,
+    covered: coverage.received,
+    remaining: coverage.remaining,
+    minutes,
+    realHourlyRate: minutes ? coverage.valued / (minutes / 60) : 0,
+  };
+}
+
+export function financialSummary(
+  sessions: WorkSession[],
+  allocations: PaymentAllocation[],
+) {
+  return sessionCoverageSummary(sessions, allocations);
+}
 export function paymentStatus(expected: number, received: number, status: Payment['status']) { if (status === 'cancelled' || status === 'overdue' || status === 'requested' || status === 'planned') return status; if (received >= expected && expected > 0) return 'paid'; return received > 0 ? 'partial' : 'planned'; }
 export function sessionPaymentState(session: WorkSession, allocations: PaymentAllocation[]) { const covered = allocationTotal(session.id, allocations); if (covered >= Number(session.net_amount) && Number(session.net_amount) > 0) return 'paid'; return covered > 0 ? 'partial' : 'unpaid'; }
 export function lastProjectForClient(clientId: string, sessions: WorkSession[]) { return sessions.filter((session) => session.client_id === clientId && session.project_id).sort((a, b) => b.created_at.localeCompare(a.created_at))[0]?.project_id ?? null; }
