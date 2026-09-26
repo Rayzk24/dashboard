@@ -14,7 +14,27 @@ export const CodeBlockWithCopy = CodeBlock.extend({
       button.type = 'button';
       button.className = 'note-code-copy';
       button.contentEditable = 'false';
-      button.textContent = 'Copier';
+      const icon = (className: string, paths: string[]) => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.classList.add(className);
+        paths.forEach((d) => {
+          const path = document.createElementNS(svg.namespaceURI, 'path');
+          path.setAttribute('d', d);
+          svg.append(path);
+        });
+        return svg;
+      };
+      button.append(
+        icon('note-copy-icon', ['M9 9h11v11H9z', 'M5 15H4V4h11v1']),
+        icon('note-copy-check', ['m5 12 4 4L19 6']),
+      );
       button.setAttribute('aria-label', 'Copier le bloc de code');
       button.title = 'Copier';
       pre.append(code);
@@ -22,7 +42,8 @@ export const CodeBlockWithCopy = CodeBlock.extend({
 
       const resetButton = () => {
         button.classList.remove('copied');
-        button.textContent = 'Copier';
+        if (resetTimer !== null) window.clearTimeout(resetTimer);
+        resetTimer = null;
         button.setAttribute('aria-label', 'Copier le bloc de code');
         button.title = 'Copier';
       };
@@ -31,11 +52,10 @@ export const CodeBlockWithCopy = CodeBlock.extend({
         try {
           await navigator.clipboard.writeText(node.textContent);
           button.classList.add('copied');
-          button.textContent = 'Copié';
           button.setAttribute('aria-label', 'Code copié');
           button.title = 'Copié';
           if (resetTimer !== null) window.clearTimeout(resetTimer);
-          resetTimer = window.setTimeout(resetButton, 1500);
+          resetTimer = window.setTimeout(resetButton, 1800);
         } catch {
           resetButton();
         }

@@ -50,6 +50,7 @@ afterEach(() => {
   editors.splice(0).forEach((editor) => editor.destroy());
   document.body.innerHTML = '';
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe('éditeur de notes', () => {
@@ -261,7 +262,36 @@ describe('éditeur de notes', () => {
     button.click();
 
     await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('const answer = 42;\nconsole.log(answer);'));
-    await vi.waitFor(() => expect(button.textContent).toContain('Copié'));
+    await vi.waitFor(() => expect(button.classList.contains('copied')).toBe(true));
+    expect(button.getAttribute('aria-label')).toBe('Code copié');
+    expect(button.querySelector('.note-copy-check')).not.toBeNull();
+  });
+
+  it('revient à la copie après 1,8 seconde sans remplacer les icônes', async () => {
+    const timeout = vi.spyOn(window, 'setTimeout');
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockResolvedValue(undefined) } });
+    const editor = editorWith('<pre><code>test</code></pre>');
+    const button = editor.view.dom.querySelector('.note-code-copy') as HTMLButtonElement;
+    const copyIcon = button.querySelector('.note-copy-icon');
+    button.click();
+    await Promise.resolve();
+    expect(button.classList.contains('copied')).toBe(true);
+    const reset = timeout.mock.calls.find(([, delay]) => delay === 1800)?.[0];
+    expect(reset).toBeTypeOf('function');
+    (reset as () => void)();
+    expect(button.classList.contains('copied')).toBe(false);
+    expect(button.getAttribute('aria-label')).toBe('Copier le bloc de code');
+    expect(button.querySelector('.note-copy-icon')).toBe(copyIcon);
+  });
+
+  it('ne montre pas de succès si le presse-papiers refuse la copie', async () => {
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: vi.fn().mockRejectedValue(new Error('Denied')) } });
+    const editor = editorWith('<pre><code>test</code></pre>');
+    const button = editor.view.dom.querySelector('.note-code-copy') as HTMLButtonElement;
+    button.click();
+    await Promise.resolve();
+    expect(button.classList.contains('copied')).toBe(false);
+    expect(button.getAttribute('aria-label')).toBe('Copier le bloc de code');
   });
 
   it('nettoie les tâches terminées sans perdre les sous-tâches restantes', () => {
