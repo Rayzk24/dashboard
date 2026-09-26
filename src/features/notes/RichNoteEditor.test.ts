@@ -265,6 +265,11 @@ describe('éditeur de notes', () => {
     await vi.waitFor(() => expect(button.classList.contains('copied')).toBe(true));
     expect(button.getAttribute('aria-label')).toBe('Code copié');
     expect(button.querySelector('.note-copy-check')).not.toBeNull();
+    // Flush the editor's DOM observer: feedback must not remount the node view.
+    await new Promise((resolve) => window.setTimeout(resolve, 50));
+    expect(editor.view.dom.querySelector('.note-code-copy')).toBe(button);
+    expect(button.classList.contains('copied')).toBe(true);
+    expect(button.hasAttribute('title')).toBe(false);
   });
 
   it('revient à la copie après 1,8 seconde sans remplacer les icônes', async () => {

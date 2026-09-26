@@ -36,7 +36,6 @@ export const CodeBlockWithCopy = CodeBlock.extend({
         icon('note-copy-check', ['m5 12 4 4L19 6']),
       );
       button.setAttribute('aria-label', 'Copier le bloc de code');
-      button.title = 'Copier';
       pre.append(code);
       dom.append(button, pre);
 
@@ -45,7 +44,6 @@ export const CodeBlockWithCopy = CodeBlock.extend({
         if (resetTimer !== null) window.clearTimeout(resetTimer);
         resetTimer = null;
         button.setAttribute('aria-label', 'Copier le bloc de code');
-        button.title = 'Copier';
       };
       const onMouseDown = (event: MouseEvent) => event.preventDefault();
       const onClick = async () => {
@@ -53,7 +51,6 @@ export const CodeBlockWithCopy = CodeBlock.extend({
           await navigator.clipboard.writeText(node.textContent);
           button.classList.add('copied');
           button.setAttribute('aria-label', 'Code copié');
-          button.title = 'Copié';
           if (resetTimer !== null) window.clearTimeout(resetTimer);
           resetTimer = window.setTimeout(resetButton, 1800);
         } catch {
@@ -67,6 +64,14 @@ export const CodeBlockWithCopy = CodeBlock.extend({
       return {
         dom,
         contentDOM: code,
+        // Copy feedback is UI, not editable document content. Let ProseMirror
+        // observe the code normally without rebuilding this view for the button.
+        ignoreMutation(mutation) {
+          return button.contains(mutation.target);
+        },
+        stopEvent(event) {
+          return event.target instanceof Node && button.contains(event.target);
+        },
         update(updatedNode) {
           if (updatedNode.type !== node.type) return false;
           node = updatedNode;
