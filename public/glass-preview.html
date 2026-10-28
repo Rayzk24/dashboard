@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+  <meta name="theme-color" content="#17151c"/>
+  <meta name="description" content="Rayzk Glass — Exploration visuelle indépendante du dashboard."/>
+  <title>Rayzk Glass — Design Preview</title>
+  <link rel="stylesheet" href="/glass/glass.css"/>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"><span class="ambient-a"></span><span class="ambient-b"></span><span class="ambient-c"></span></div>
+<div class="shell" id="shell">
+  <aside class="sidebar surface">
+    <a class="identity" href="/glass-preview.html" aria-label="Rayzk Glass accueil"><span class="brand-symbol">R<span>.</span></span><span class="identity-text"><strong>Rayzk<span class="bright-dot">.</span></strong><small>PERSONAL SPACE</small></span></a>
+    <div class="side-caption">ESPACE PERSONNEL</div>
+    <nav class="nav-links" aria-label="Navigation principale">
+      <button class="nav-link active" data-view-target="home"><span class="n-icon">⌂</span><span>Accueil</span></button>
+      <button class="nav-link" data-view-target="habits"><span class="n-icon">✓</span><span>Habitudes</span></button>
+      <button class="nav-link" data-view-target="freelance"><span class="n-icon">▦</span><span>Freelance</span></button>
+      <button class="nav-link" data-view-target="notes"><span class="n-icon">▤</span><span>Notes</span></button>
+      <button class="nav-link" data-view-target="personal"><span class="n-icon">◇</span><span>Personnel</span></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="micro-card">
+        <div class="micro-row"><span class="micro-indicator"></span> ESPACE DE DÉMONSTRATION</div>
+        <p>Un nouvel univers visuel, sans toucher à tes données.</p>
+      </div>
+      <button class="profile" id="profileButton"><span class="avatar">R.</span><span><strong>Rayzk</strong><small>Design preview</small></span><span class="profile-ellipsis">···</span></button>
+    </div>
+  </aside>
+
+  <div class="main-stack">
+    <header class="topbar">
+      <div class="breadcrumbs"><span class="breadcrumbs-muted">Mon espace</span><span class="breadcrumbs-divider">/</span><strong id="breadcrumb">Accueil</strong></div>
+      <div class="top-actions"><span class="top-date" id="currentDate">Jeudi 29 octobre</span><span class="mode-marker"><i></i> Glass preview</span><button class="icon-button" id="searchToggle" aria-label="Rechercher">⌕</button><button class="small-avatar" id="avatarToggle" aria-label="À propos">R.</button></div>
+    </header>
+
+    <div class="preview-banner"><span class="preview-badge">CONCEPT</span><span>Rayzk Glass <span class="banner-muted">· Version indépendante · Données de démonstration</span></span><span class="preview-version">V1.0</span></div>
+
+    <main class="main-content" id="mainContent">
+      <section class="view active" data-view="home">
+        <div class="page-heading">
+          <div><p class="overline"><span class="tiny-star">✦</span> TON ESPACE, RÉINVENTÉ</p><h1>Le bon rythme.<br/><span class="soft-title">Sans le bruit.</span></h1><p class="heading-sub">Une vue claire sur ce qui compte vraiment aujourd’hui.</p></div>
+          <div class="date-tile surface"><span>JEUDI</span><strong>29</strong><small>OCTOBRE 2026</small></div>
+        </div>
+        <div class="home-grid">
+          <div class="column-stack">
+            <section class="surface featured-card">
+              <div class="card-top"><div><span class="overline">TON OBJECTIF DU JOUR</span><h2>Avancer, simplement.</h2></div><span class="icon-circle">✦</span></div>
+              <p class="card-description">Chaque petite session compte. Garde une cadence qui te ressemble.</p>
+              <div class="focus-track"><div class="focus-track-fill" id="focusFill"></div></div>
+              <div class="focus-track-foot"><span id="focusTime">45 min réalisées</span><strong id="focusPercent">75 % <span>de ton objectif</span></strong></div>
+              <button class="button primary" id="startSession"><span class="play-glyph">▶</span><span id="sessionButtonText">Démarrer une session</span><span class="button-arrow">↗</span></button>
+            </section>
+            <section class="surface habits-card">
+              <div class="card-top"><div><span class="overline">AUJOURD’HUI</span><h2>Habitudes</h2></div><button class="card-arrow" data-view-target="habits" aria-label="Voir les habitudes">↗</button></div>
+              <div class="habit-mini" id="homeHabits">
+                <button class="habit-item complete" data-habit="0"><span class="habit-check">✓</span><span>Préparer la journée</span><small>FAIT</small></button>
+                <button class="habit-item" data-habit="1"><span class="habit-check"></span><span>Lire 20 minutes</span><small>À FAIRE</small></button>
+                <button class="habit-item complete" data-habit="2"><span class="habit-check">✓</span><span>Faire une pause active</span><small>FAIT</small></button>
+              </div>
+              <div class="sub-footer"><span id="habitFooter">2 sur 3 terminées</span><span class="mini-ring">◕</span></div>
+            </section>
+          </div>
+          <div class="column-stack">
+            <section class="surface freelance-spotlight">
+              <div class="card-top"><div><span class="overline">FREELANCE / OCTOBRE</span><h2>Ton activité, en clair.</h2></div><button class="card-arrow" data-view-target="freelance">↗</button></div>
+              <div class="big-money">284<span>,00 €</span></div>
+              <div class="money-caption"><span class="trend-chip">↗ +18,4 %</span><span>Valeur générée ce mois-ci</span></div>
+              <div class="sparkline" aria-hidden="true"><svg viewBox="0 0 320 110" preserveAspectRatio="none"><defs><linearGradient id="sparkGrad" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#78adff" stop-opacity=".29"/><stop offset="1" stop-color="#78adff" stop-opacity="0"/></linearGradient></defs><path d="M0 95 C22 92 22 74 44 82 S82 72 104 63 S144 80 161 56 S200 57 222 35 S254 42 270 24 S295 28 320 8 L320 110 L0 110Z" fill="url(#sparkGrad)"/><path d="M0 95 C22 92 22 74 44 82 S82 72 104 63 S144 80 161 56 S200 57 222 35 S254 42 270 24 S295 28 320 8" fill="none" stroke="#83b4ff" stroke-width="2.8" stroke-linecap="round"/></svg></div>
+              <div class="two-metrics"><div><small>À recevoir</small><strong>64,00 €</strong></div><div><small>Temps travaillé</small><strong>23 h 40</strong></div></div>
+            </section>
+            <section class="surface recent-card">
+              <div class="card-top"><div><span class="overline">À RETROUVER</span><h2>Dernière activité</h2></div><button class="card-arrow" data-view-target="freelance">↗</button></div>
+              <div class="activity-row"><span class="activity-icon blue">▦</span><span><strong>Configuration du Hub</strong><small>EvoBlock · Aujourd’hui</small></span><b>+24 €</b></div>
+              <div class="activity-row"><span class="activity-icon peach">▤</span><span><strong>Notes de projet mises à jour</strong><small>EvoBlock · Hier</small></span><b class="muted-amount">Note</b></div>
+              <div class="activity-row"><span class="activity-icon lavender">✓</span><span><strong>Objectif quotidien atteint</strong><small>Habitudes · Hier</small></span><b class="muted-amount">Terminé</b></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="freelance">
+        <div class="page-heading compact-heading"><div><p class="overline">TON ACTIVITÉ</p><h1>Freelance<span class="bright-dot">.</span></h1><p class="heading-sub">Ton travail, tes clients et tes progrès, au même endroit.</p></div><button class="button primary small-primary" id="newSession">+ Nouvelle session</button></div>
+        <div class="section-toolbar"><span class="section-label">VUE D’ENSEMBLE</span><div class="segment-control" id="periodTabs"><button class="active" data-period="month">Ce mois</button><button data-period="week">Semaine</button><button data-period="year">Année</button></div></div>
+        <div class="finance-metrics"><div class="surface metric-box featured-metric"><span>Travail valorisé</span><strong id="netMetric">284,00 €</strong><small>↗ +18,4 % ce mois</small></div><div class="surface metric-box"><span>Reçu</span><strong class="mint" id="receivedMetric">220,00 €</strong><small>Déjà encaissé</small></div><div class="surface metric-box"><span>À recevoir</span><strong class="peach" id="dueMetric">64,00 €</strong><small>Restant à récupérer</small></div><div class="surface metric-box"><span>Temps travaillé</span><strong id="hoursMetric">23 h 40</strong><small>17 sessions enregistrées</small></div></div>
+        <div class="freelance-layout"><section class="surface chart-panel"><div class="card-top"><div><span class="overline">STATISTIQUES</span><h2>Évolution du travail</h2></div><div class="segment-control tiny" id="chartMode"><button data-chart="value" class="active">Valeur</button><button data-chart="time">Temps</button></div></div><div class="chart-area" id="chartArea"><div class="gridline g1"></div><div class="gridline g2"></div><div class="gridline g3"></div><div id="chartBars" class="chart-bars"></div></div><div class="chart-caption"><span><i></i> Ton activité</span><span>Données illustratives</span></div></section><section class="surface clients-panel"><div class="card-top"><div><span class="overline">RELATIONS</span><h2>Clients</h2></div><span class="count-bubble">02</span></div><button class="client-line selected" data-client="EvoBlock"><span class="client-logo amber-grad">E</span><span><strong>EvoBlock</strong><small>Serveur Minecraft</small></span><b>↗</b></button><button class="client-line" data-client="LootSMP"><span class="client-logo purple-grad">L</span><span><strong>LootSMP</strong><small>Configuration & systèmes</small></span><b>↗</b></button><div class="client-spot"><small>CLIENT SÉLECTIONNÉ</small><strong id="selectedClient">EvoBlock</strong><span>12,00 € / h · Mission en cours</span></div></section></div>
+        <section class="surface session-list"><div class="card-top"><div><span class="overline">ACTIVITÉ RÉCENTE</span><h2>Dernières sessions</h2></div><span class="small-label">TOUTES LES SESSIONS ↗</span></div><div class="table-head"><span>SESSION</span><span>DURÉE</span><span>STATUT</span><span>MONTANT</span></div><div class="table-row"><span><strong>Configuration complète du hub</strong><small>EvoBlock · 29 octobre</small></span><span>2 h 00</span><span class="status-tag pending">En attente</span><b>24,00 €</b></div><div class="table-row"><span><strong>Traduction des plugins</strong><small>EvoBlock · 28 octobre</small></span><span>1 h 30</span><span class="status-tag paid">Payée</span><b>18,00 €</b></div><div class="table-row"><span><strong>Corrections et finalisation</strong><small>LootSMP · 26 octobre</small></span><span>45 min</span><span class="status-tag paid">Payée</span><b>9,00 €</b></div></section>
+      </section>
+
+      <section class="view" data-view="habits">
+        <div class="page-heading compact-heading"><div><p class="overline">RITUELS DU QUOTIDIEN</p><h1>Habitudes<span class="bright-dot">.</span></h1><p class="heading-sub">La régularité, sans pression. Un jour à la fois.</p></div><span class="glass-label">SEMAINE 44</span></div>
+        <div class="habits-overview"><section class="surface habit-progress"><span class="overline">AUJOURD’HUI</span><div class="progress-layout"><div class="ring-graphic" id="habitRing"><span id="ringNumber">2<small>/3</small></span></div><div><h2>Tu avances bien.</h2><p>Chaque action terminée est un pas de plus dans la bonne direction.</p><span class="trend-chip">✦ Continue comme ça</span></div></div></section><section class="surface streak-box"><span class="overline">TA RÉGULARITÉ</span><strong>6 <small>jours</small></strong><p>De bonnes habitudes qui prennent forme.</p><div class="week-dots"><span class="on">L</span><span class="on">M</span><span class="on">M</span><span class="on">J</span><span class="on">V</span><span class="on">S</span><span>D</span></div></section></div>
+        <section class="surface habit-full-list"><div class="card-top"><div><span class="overline">TES HABITUDES</span><h2>À faire aujourd’hui</h2></div><span class="glass-label" id="habitCountLabel">2 / 3</span></div><div id="habitsDetailed"></div></section>
+      </section>
+
+      <section class="view" data-view="notes">
+        <div class="page-heading compact-heading"><div><p class="overline">IDÉES & PROJETS</p><h1>Notes<span class="bright-dot">.</span></h1><p class="heading-sub">Un espace calme pour retrouver tes idées.</p></div><button class="button primary small-primary" id="addNote">+ Nouvelle note</button></div>
+        <div class="notes-layout"><aside class="surface notes-sidebar"><div class="notes-side-title">MES NOTES <span id="noteCount">03</span></div><div class="notes-links" id="noteLinks"></div><div class="notes-side-bottom">✦ Sauvegarde locale de cette démo</div></aside><article class="surface note-editor"><div class="note-editor-top"><span id="noteCategory" class="status-tag pending">PROJET</span><span class="note-save-state" id="noteSave">● Brouillon de démonstration</span></div><input id="noteTitle" class="note-title-input" aria-label="Titre de la note" value="EvoBlock — Todo"/><p class="note-meta">Dernière modification aujourd’hui · Rayzk Glass</p><div class="editor-separator"></div><div id="noteBody" class="note-body" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Contenu de la note"><p>Les prochaines étapes du projet, au même endroit.</p><h3>À finaliser</h3><p>☑ Configuration du hub</p><p>☐ Traduction des menus</p><p>☐ Tests et vérifications</p><h3>À garder en tête</h3><p>Vérifier le rendu sur mobile avant la livraison.</p></div></article></div>
+      </section>
+
+      <section class="view" data-view="personal">
+        <div class="page-heading compact-heading"><div><p class="overline">TON ÉQUILIBRE</p><h1>Personnel<span class="bright-dot">.</span></h1><p class="heading-sub">Des repères simples pour garder l’essentiel en vue.</p></div><span class="glass-label">MON ESPACE</span></div>
+        <div class="personal-grid"><section class="surface personal-balance"><span class="overline">ÉPARGNE DE PRÉCAUTION</span><h2>Construire sereinement.</h2><div class="savings-figure">420<span>,00 €</span></div><p>Une base qui grandit à ton rythme.</p><div class="focus-track"><div class="focus-track-fill personal-fill"></div></div><div class="focus-track-foot"><span>Objectif de démonstration</span><strong>70 %</strong></div></section><section class="surface savings-breakdown"><div class="card-top"><div><span class="overline">RÉPARTITION</span><h2>Mes enveloppes</h2></div><span class="count-bubble">03</span></div><div class="saving-line"><span class="saving-dot blue"></span><span>Sécurité</span><strong>250 €</strong></div><div class="saving-line"><span class="saving-dot violet"></span><span>Projets</span><strong>120 €</strong></div><div class="saving-line"><span class="saving-dot amber"></span><span>Loisirs</span><strong>50 €</strong></div><div class="saving-meter"><i></i><i></i><i></i></div></section></div><section class="surface personal-quote"><span>✦</span><p>« Un espace bien pensé laisse de la place à ce qui compte. »</p><small>RAYZK GLASS · CONCEPT</small></section>
+      </section>
+    </main>
+  </div>
+
+  <aside class="right-rail"><section class="surface time-card"><span class="overline">TON ENVIRONNEMENT</span><div class="time-display" id="liveClock">21:36</div><p>Un peu de calme pour avancer.</p><div class="time-divider"></div><div class="rail-status"><span class="micro-indicator"></span> Tout est prêt pour ta journée.</div></section><section class="surface notes-peek"><span class="overline">ACCÈS RAPIDE</span><h3>Ton espace, en un geste.</h3><button data-view-target="notes">▤ <span>Ouvrir mes notes</span><b>↗</b></button><button data-view-target="freelance">▦ <span>Voir mon activité</span><b>↗</b></button><button data-view-target="habits">✓ <span>Mes habitudes</span><b>↗</b></button></section><div class="rail-footer">RAYZK GLASS<br/><span>EXPÉRIENCE EXPÉRIMENTALE</span></div></aside>
+</div>
+<nav class="mobile-nav surface" aria-label="Navigation mobile"><button data-view-target="home" class="active"><span>⌂</span><small>Accueil</small></button><button data-view-target="habits"><span>✓</span><small>Habitudes</small></button><button data-view-target="freelance"><span>▦</span><small>Freelance</small></button><button data-view-target="notes"><span>▤</span><small>Notes</small></button><button data-view-target="personal"><span>◇</span><small>Personnel</small></button></nav>
+
+<div class="overlay" id="overlay" hidden><div class="dialog surface" role="dialog" aria-modal="true"><button class="dialog-close" id="dialogClose">✕</button><span class="overline" id="dialogEyebrow">RAYZK GLASS</span><h2 id="dialogTitle">Aperçu</h2><p id="dialogText">Cette fonctionnalité est simulée dans la version de démonstration.</p><div class="dialog-fields" id="dialogFields"></div><button class="button primary" id="dialogAccept">Compris</button></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/glass/glass.js"></script>
+</body>
+</html>
